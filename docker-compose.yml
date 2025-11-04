@@ -11,8 +11,9 @@ services:
     ports:
       - "8080:8080"
   db:
-    image: postgres
+    image: postgres:18
     restart: always
+    container_name: gardeners_db
     environment:
       .env
     healthcheck:
@@ -20,3 +21,5 @@ services:
       interval: 1s
       timeout: 5s
       retries: 10
+    volumes:
+      - ./database/db-data/:/var/lib/postgresql
