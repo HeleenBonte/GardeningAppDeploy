@@ -9,18 +9,18 @@ import java.util.Set;
 @Entity
 @Table(name = "users")
 public class User extends BaseEntity{
-    @Column(name = "userName", length = 25)
+    @Column(name = "userName", length = 100, nullable = false)
     private String userName;
 
-    @Column(name = "userEmail")
+    @Column(name = "userEmail", nullable = false)
     private String userEmail;
 
-    @Column(name = "password")
+    @Column(name = "password", nullable = false)
     private String password;
 
-    @ManyToOne
-    @JoinColumn(name = "roleID")
-    private Role role;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Role role = Role.CUSTOMER;
 
     @ManyToMany
     @JoinTable(name = "user_crops", joinColumns = @JoinColumn(name = "cropID"),

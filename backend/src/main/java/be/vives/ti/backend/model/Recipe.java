@@ -28,10 +28,13 @@ public class Recipe extends BaseEntity{
     @Column(name = "image")
     private String imageURL;
 
-    @ManyToMany
-    @JoinTable(name = "RecipeQuantity", joinColumns = @JoinColumn(name = "recipeQuantityID"),
-            inverseJoinColumns = @JoinColumn(name = "recipeID"))
+    @OneToMany
+    @JoinColumn(name = "recipeQuantityID")
     private Set<RecipeQuantity> quantities;
+
+    @OneToMany
+    @JoinColumn(name = "recipeStepID")
+    private Set<RecipeStep> steps;
 
     @ManyToOne
     @JoinColumn(name = "courseID")
@@ -55,20 +58,24 @@ public class Recipe extends BaseEntity{
         this.course = course;
         this.category = category;
         this.quantities = new HashSet<>();
+        this.steps = new HashSet<>();
     }
 
     public Recipe(String recipeName, User author,
                   String recipeDescription,
                   String prepTime, String cookTime,
+                  String imageURL,
                   Course course, Category category){
         this.recipeName = recipeName;
         this.author = author;
         this.recipeDescription = recipeDescription;
         this.prepTime = prepTime;
         this.cookTime = cookTime;
+        this.imageURL = imageURL;
         this.course = course;
         this.category = category;
         this.quantities = new HashSet<>();
+        this.steps = new HashSet<>();
     }
 
     public String getRecipeName(){
@@ -152,7 +159,20 @@ public class Recipe extends BaseEntity{
         }
         return ingredients;
     }
+    public void setQuantities(Set<RecipeQuantity> quantities) {
+        this.quantities = quantities;
+    }
 
+    public void setSteps(Set<RecipeStep> steps) {
+        this.steps = steps;
+    }
+
+    public Set<RecipeStep> getSteps() {
+        if(this.steps == null){
+            this.steps = new HashSet<>();
+        }
+        return steps;
+    }
     @Override
     public String toString(){
         return this.getRecipeName();

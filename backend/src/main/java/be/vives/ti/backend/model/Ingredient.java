@@ -15,9 +15,6 @@ public class Ingredient extends BaseEntity{
     @Column(name = "ingredientName")
     private String name;
 
-    @Column(name = "caloriesPerQuantity")
-    private Integer caloriesPerQuantity;
-
     @OneToOne
     @JoinColumn(name = "cropID", nullable = true)
     private Crop crop;
@@ -34,25 +31,19 @@ public class Ingredient extends BaseEntity{
     public Ingredient() {
     }
 
-    public Ingredient(String name, Integer caloriesPerQuantity) {
+    public Ingredient(String name) {
         this.name = name;
-        this.caloriesPerQuantity = caloriesPerQuantity;
         this.quantities = new HashSet<>();
     }
 
-    public Ingredient(String name, Integer caloriesPerQuantity, Crop crop) {
+    public Ingredient(String name, Crop crop) {
         this.name = name;
-        this.caloriesPerQuantity = caloriesPerQuantity;
         this.crop = crop;
         this.quantities = new HashSet<>();
     }
 
     public String getName() {
         return name;
-    }
-
-    public Integer getCaloriesPerQuantity() {
-        return caloriesPerQuantity;
     }
 
     public Crop getCrop() {
