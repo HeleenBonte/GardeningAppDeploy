@@ -23,3 +23,5 @@ services:
       retries: 10
     volumes:
       - ./database/db-data/:/var/lib/postgresql
+    ports:
+      - "5432:5432"
