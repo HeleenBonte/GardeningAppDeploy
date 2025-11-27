@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
+@Table(name = "recipes")
 public class Recipe extends BaseEntity{
     @Column(name = "recipeName")
     private String recipeName;
@@ -28,9 +29,9 @@ public class Recipe extends BaseEntity{
     private String imageURL;
 
     @ManyToMany
-    @JoinTable(name = "RecipeQuantity", joinColumns = @JoinColumn(name = "ingredientID"),
-        inverseJoinColumns = @JoinColumn(name = "recipeID"))
-    private Set<Ingredient> ingredients;
+    @JoinTable(name = "RecipeQuantity", joinColumns = @JoinColumn(name = "recipeQuantityID"),
+            inverseJoinColumns = @JoinColumn(name = "recipeID"))
+    private Set<RecipeQuantity> quantities;
 
     @ManyToOne
     @JoinColumn(name = "courseID")
@@ -53,6 +54,7 @@ public class Recipe extends BaseEntity{
         this.cookTime = cookTime;
         this.course = course;
         this.category = category;
+        this.quantities = new HashSet<>();
     }
 
     public Recipe(String recipeName, User author,
@@ -66,7 +68,7 @@ public class Recipe extends BaseEntity{
         this.cookTime = cookTime;
         this.course = course;
         this.category = category;
-        this.ingredients = new HashSet<>();
+        this.quantities = new HashSet<>();
     }
 
     public String getRecipeName(){
@@ -133,9 +135,20 @@ public class Recipe extends BaseEntity{
         return imageURL;
     }
 
+    public Set<RecipeQuantity> getQuantities(){
+        if(this.quantities == null){
+            this.quantities = new HashSet<>();
+        }
+        return quantities;
+    }
+
     public Set<Ingredient> getIngredients(){
-        if(this.ingredients == null){
-            this.ingredients = new HashSet<>();
+        Set<Ingredient> ingredients = new HashSet<>();
+        if(this.quantities == null){
+            this.quantities = new HashSet<>();
+        }
+        for (RecipeQuantity quantity : quantities) {
+            ingredients.add(quantity.getIngredient());
         }
         return ingredients;
     }

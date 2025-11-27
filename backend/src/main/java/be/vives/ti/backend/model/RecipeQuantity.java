@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.persistence.criteria.CriteriaBuilder;
 
 @Entity
+@Table(name = "recipeQuantities")
 public class RecipeQuantity extends BaseEntity{
     @ManyToOne
     @JoinColumn(name = "recipeID")

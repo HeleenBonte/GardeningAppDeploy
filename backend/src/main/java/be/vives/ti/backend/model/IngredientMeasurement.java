@@ -4,6 +4,7 @@ package be.vives.ti.backend.model;
 import jakarta.persistence.*;
 
 @Entity
+@Table(name = "ingredientMeasurements")
 public class IngredientMeasurement extends BaseEntity{
     @Column(name = "ingredientMeasurementName")
     private String name;

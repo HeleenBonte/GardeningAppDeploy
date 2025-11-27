@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.persistence.criteria.CriteriaBuilder;
 
 @Entity
+@Table(name = "recipeSteps")
 public class RecipeStep extends BaseEntity{
     @Column(name = "stepNumber")
     private Integer stepNumber;

@@ -9,6 +9,7 @@ import java.time.Month;
 import java.util.Set;
 
 @Entity
+@Table(name = "crops")
 public class Crop extends BaseEntity{
     @Column(name = "cropName")
     private String name;

@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
+@Table(name = "ingredients")
 public class Ingredient extends BaseEntity{
     @Column(name = "ingredientName")
     private String name;
@@ -21,10 +22,14 @@ public class Ingredient extends BaseEntity{
     @JoinColumn(name = "cropID", nullable = true)
     private Crop crop;
 
-    @ManyToMany
-    @JoinTable(name = "RecipeQuantity", joinColumns = @JoinColumn(name = "recipeID"),
-            inverseJoinColumns = @JoinColumn(name = "ingredientID"))
-    private Set<Recipe> recipes;
+//    @ManyToMany
+//    @JoinTable(name = "RecipeQuantity", joinColumns = @JoinColumn(name = "recipeID"),
+//            inverseJoinColumns = @JoinColumn(name = "ingredientID"))
+//    private Set<Recipe> recipes;
+
+    @OneToMany
+    @JoinColumn(name = "recipeQuantityID")
+    private Set<RecipeQuantity> quantities;
 
     public Ingredient() {
     }
@@ -32,14 +37,14 @@ public class Ingredient extends BaseEntity{
     public Ingredient(String name, Integer caloriesPerQuantity) {
         this.name = name;
         this.caloriesPerQuantity = caloriesPerQuantity;
-        this.recipes = new HashSet<>();
+        this.quantities = new HashSet<>();
     }
 
     public Ingredient(String name, Integer caloriesPerQuantity, Crop crop) {
         this.name = name;
         this.caloriesPerQuantity = caloriesPerQuantity;
         this.crop = crop;
-        this.recipes = new HashSet<>();
+        this.quantities = new HashSet<>();
     }
 
     public String getName() {
@@ -54,10 +59,10 @@ public class Ingredient extends BaseEntity{
         return crop;
     }
 
-    public Set<Recipe> getRecipes(){
-        if(this.recipes == null){
-            this.recipes = new HashSet<>();
+    public Set<RecipeQuantity> getQuantities(){
+        if(this.quantities == null){
+            this.quantities = new HashSet<>();
         }
-        return recipes;
+        return quantities;
     }
 }
