@@ -5,6 +5,6 @@ import jakarta.persistence.*;
 
 
 public enum Role{
-    CUSTOMER,
+    USER,
     ADMIN
 }

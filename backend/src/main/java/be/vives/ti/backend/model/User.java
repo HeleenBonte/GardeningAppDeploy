@@ -13,14 +13,14 @@ public class User extends BaseEntity{
     private String userName;
 
     @Column(name = "userEmail", nullable = false)
-    private String userEmail;
+    private String email;
 
     @Column(name = "password", nullable = false)
     private String password;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private Role role = Role.CUSTOMER;
+    private Role role = Role.USER;
 
     @ManyToMany
     @JoinTable(name = "user_crops", joinColumns = @JoinColumn(name = "cropID"),
@@ -40,9 +40,11 @@ public class User extends BaseEntity{
 
     }
 
-    public User(String userName, String userEmail, Role role){
+
+
+    public User(String userName, String email, Role role){
         this.userName = userName;
-        this.userEmail = userEmail;
+        this.email = email;
         this.favoriteCrops = new HashSet<>();
         this.favoriteRecipes = new HashSet<>();
         this.ownRecipes = new HashSet<>();
@@ -53,12 +55,16 @@ public class User extends BaseEntity{
         return this.userName;
     }
 
-    public String getUserEmail(){
-        return this.userEmail;
+    public String getEmail(){
+        return this.email;
     }
 
     public Role getRole(){
         return this.role;
+    }
+
+    public String getPassword() {
+        return password;
     }
 
     public Set<Crop> getFavoriteCrops(){
@@ -103,6 +109,21 @@ public class User extends BaseEntity{
             this.ownRecipes = new HashSet<>();
         }
         return ownRecipes;
+    }
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public void setEmail(String userEmail) {
+        this.email = userEmail;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
     }
 
     public void addOwnRecipes(Recipe recipe){

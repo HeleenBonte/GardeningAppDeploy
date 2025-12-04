@@ -1,4 +1,4 @@
-package be.vives.ti.backend.dto.response;
+package be.vives.ti.backend.dto;
 public class AuthResponse {
 
     private String token;

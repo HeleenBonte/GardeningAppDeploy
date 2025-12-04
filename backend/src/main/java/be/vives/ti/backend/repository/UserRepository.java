@@ -16,4 +16,5 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     List<Crop> findByIdWithFavoriteCrops(@Param("id") int id);
     @Query("SELECT u FROM User u JOIN FETCH u.favoriteRecipes WHERE u.id = :id")
     List<Recipe> findByIdWithFavoriteRecipes(@Param("id") int id);
+    Optional<User> findByEmail(String email);
 }
