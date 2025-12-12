@@ -2,11 +2,13 @@ package be.vives.ti.backend.dto.request;
 
 import be.vives.ti.backend.model.IngredientMeasurement;
 import be.vives.ti.backend.model.RecipeStep;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 
 import java.util.List;
 
+@Schema(description = "Request object for creating a new recipe")
 public record CreateRecipeRequest(
         @NotBlank(message = "Name is required")
         String name,
@@ -24,11 +26,11 @@ public record CreateRecipeRequest(
         @NotBlank(message = "Category id is required")
         Integer categoryId,
         @NotEmpty(message = "Recipe must contain at least one ingredient")
-        List<QuantityRequest> quantities,
+        List<CreateQuantityRequest> quantities,
         @NotEmpty(message = "Recipe must contain at least one step")
-        List<RecipeStepRequest> steps
+        List<CreateRecipeStepRequest> steps
 ) {
-    public record QuantityRequest(
+    public record CreateQuantityRequest(
             @NotBlank(message = "Ingredient id is required")
             Integer ingredientId,
             @NotBlank(message = "Measurement id is required")
@@ -37,7 +39,7 @@ public record CreateRecipeRequest(
             Double quantity
     ){
     }
-    public record RecipeStepRequest(
+    public record CreateRecipeStepRequest(
             @NotBlank(message = "Step number is required")
             Integer stepNumber,
             @NotBlank(message = "Description is required")

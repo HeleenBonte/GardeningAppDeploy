@@ -4,16 +4,16 @@ import jakarta.persistence.*;
 import jakarta.persistence.criteria.CriteriaBuilder;
 
 @Entity
-@Table(name = "recipeSteps")
+@Table(name = "recipe_steps")
 public class RecipeStep extends BaseEntity{
-    @Column(name = "stepNumber")
+    @Column(name = "step_number")
     private Integer stepNumber;
 
-    @Column(name = "stepDescription")
+    @Column(name = "step_description")
     private String description;
 
     @ManyToOne
-    @JoinColumn(name = "recipeID")
+    @JoinColumn(name = "recipe_id")
     private Recipe recipe;
 
     public RecipeStep() {
@@ -35,5 +35,17 @@ public class RecipeStep extends BaseEntity{
 
     public Recipe getRecipe() {
         return recipe;
+    }
+
+    public void setStepNumber(Integer stepNumber) {
+        this.stepNumber = stepNumber;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setRecipe(Recipe recipe) {
+        this.recipe = recipe;
     }
 }

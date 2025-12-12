@@ -31,23 +31,23 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints - anyone can access
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/pizzas/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/recipes/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
 
                         // Swagger/OpenAPI endpoints - public access for API documentation
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
 
-                        // Pizza modification endpoints - require ADMIN role only
-                        .requestMatchers(HttpMethod.POST, "/api/pizzas/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/pizzas/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/pizzas/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/pizzas/**").hasRole("ADMIN")
+                        // Recipe modification endpoints - require ADMIN role only
+                        .requestMatchers(HttpMethod.POST, "/api/recipes/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/recipes/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/recipes/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/recipes/**").hasRole("ADMIN")
 
                         // Customer endpoints - accessible by CUSTOMER and ADMIN
-                        .requestMatchers("/api/customers/**").hasAnyRole("CUSTOMER", "ADMIN")
+                        .requestMatchers("/api/customers/**").hasAnyRole("USER", "ADMIN")
 
                         // Order endpoints - POST is for CUSTOMER, all other methods for ADMIN
-                        .requestMatchers(HttpMethod.POST, "/api/orders").hasRole("CUSTOMER")
+                        .requestMatchers(HttpMethod.POST, "/api/orders").hasRole("USER")
                         .requestMatchers("/api/orders/**").hasRole("ADMIN")
 
                         // All other requests require authentication

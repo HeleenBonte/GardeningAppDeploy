@@ -11,43 +11,43 @@ import java.util.Set;
 @Entity
 @Table(name = "crops")
 public class Crop extends BaseEntity{
-    @Column(name = "cropName")
+    @Column(name = "cropname")
     private String name;
 
-    @Column(name = "sowingStart")
+    @Column(name = "sowing_start")
     private Month sowingStart;
 
-    @Column(name = "sowingEnd")
+    @Column(name = "sowing_end")
     private Month sowingEnd;
 
-    @Column(name = "plantingStart")
+    @Column(name = "planting_start")
     private Month plantingStart;
 
-    @Column(name = "plantingEnd")
+    @Column(name = "planting_end")
     private Month plantingEnd;
 
-    @Column(name = "harvestStart")
+    @Column(name = "harvest_start")
     private Month harvestStart;
 
-    @Column(name = "harvestEnd")
+    @Column(name = "harvest_end")
     private Month harvestEnd;
 
-    @Column(name = "inHouse")
+    @Column(name = "in_house")
     private Boolean inHouse;
 
-    @Column(name = "inPots")
+    @Column(name = "in_pots")
     private Boolean inPots;
 
-    @Column(name = "inGarden")
+    @Column(name = "in_garden")
     private Boolean inGarden;
 
-    @Column(name = "inGreenhouse")
+    @Column(name = "in_greenhouse")
     private Boolean inGreenhouse;
 
-    @Column(name = "cropDescription")
+    @Column(name = "crop_description")
     private String cropDescription;
 
-    @Column(name = "cropTips")
+    @Column(name = "crop_tips")
     private String cropTips;
 
     public Crop() {

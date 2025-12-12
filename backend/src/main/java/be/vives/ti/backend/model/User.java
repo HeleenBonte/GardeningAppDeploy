@@ -9,10 +9,10 @@ import java.util.Set;
 @Entity
 @Table(name = "users")
 public class User extends BaseEntity{
-    @Column(name = "userName", length = 100, nullable = false)
+    @Column(name = "user_name", length = 100, nullable = false)
     private String userName;
 
-    @Column(name = "userEmail", nullable = false)
+    @Column(name = "user_email", nullable = false)
     private String email;
 
     @Column(name = "password", nullable = false)
@@ -33,7 +33,7 @@ public class User extends BaseEntity{
     private Set<Recipe> favoriteRecipes;
 
     @OneToMany
-    @JoinColumn(name = "ownRecipe")
+    @JoinColumn(name = "own_recipe")
     private Set<Recipe> ownRecipes;
 
     public User(){

@@ -1,0 +1,295 @@
+import React, { useState } from 'react';
+import { View, Text, ScrollView, Image, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../themes/ThemeContext';
+import AppHeader from '../components/AppHeader';
+
+import sampleCrops from '../data/sampleCrops';
+import { Month } from '../models/Crop';
+
+export default function CropScreen() {
+	const { theme } = useTheme();
+	const [search, setSearch] = useState('');
+	const [openFilter, setOpenFilter] = useState(null);
+	const [selectedHarvestMonth, setSelectedHarvestMonth] = useState(null);
+	const [selectedSowingMonth, setSelectedSowingMonth] = useState(null);
+	const [selectedLocations, setSelectedLocations] = useState({});
+	const locationOptions = [
+		{ key: 'inPots', label: 'In Pots' },
+		{ key: 'inGreenhouse', label: 'In Greenhouse' },
+		{ key: 'inHouse', label: 'In House' },
+		{ key: 'inGarden', label: 'In Garden' },
+	];
+
+	const filters = [
+		'Sowing/Planting Period',
+		'Harvest Period',
+		'Growing Location',
+	];
+
+	const months = Object.values(Month);
+
+	function monthIndex(monthName) {
+		return months.indexOf(monthName);
+	}
+
+	function isMonthInRange(monthName, startName, endName) {
+		if (!monthName || !startName || !endName) return false;
+		const m = monthIndex(monthName);
+		const s = monthIndex(startName);
+		const e = monthIndex(endName);
+		if (s === -1 || e === -1 || m === -1) return false;
+		if (s <= e) return m >= s && m <= e;
+		// wrap-around (e.g., Nov -> Feb)
+		return m >= s || m <= e;
+	}
+
+	return (
+		<ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
+			<AppHeader />
+			<View style={styles.titleSection}>
+				<Text style={[styles.titleText, { color: theme.text }]}>Garden Crops</Text>
+				<Text style={[styles.subtitle, { color: theme.secondaryText }]}>Explore our collection of crops with detailed growing guides</Text>
+
+				<View style={styles.searchWrapper}>
+					<TextInput
+						placeholder="Search crops..."
+						placeholderTextColor={theme.secondaryText}
+						value={search}
+						onChangeText={setSearch}
+						style={[styles.searchInput, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.cardBorder }]}
+					/>
+				</View>
+
+				<View style={[styles.filtersContainer, { borderColor: theme.cardBorder, backgroundColor: theme.cardBackground }]}> 
+					{filters.map((label, idx) => (
+						<React.Fragment key={label}>
+							<TouchableOpacity
+								key={label}
+								style={styles.filterRow}
+								onPress={() => setOpenFilter(openFilter === idx ? null : idx)}
+							>
+								<Text style={[styles.filterLabel, { color: theme.text }]}>{label}</Text>
+								<Ionicons name={openFilter === idx ? 'chevron-up' : 'chevron-down'} size={18} color={theme.secondaryText} />
+							</TouchableOpacity>
+							{/* month picker for the first filter (Sowing/Planting Period) */}
+							{idx === 0 && openFilter === idx && (
+								<View style={styles.monthsWrapper}>
+									{months.map((m) => {
+										const selected = selectedSowingMonth === m;
+										return (
+											<TouchableOpacity
+												key={m}
+												style={[styles.monthItem, selected && { borderColor: theme.primary, backgroundColor: theme.activeTabBg }]}
+												onPress={() => setSelectedSowingMonth(selected ? null : m)}
+											>
+												<Text style={{ color: selected ? theme.primary : theme.text }}>{m.substring(0,3)}</Text>
+											</TouchableOpacity>
+										);
+									})}
+									<TouchableOpacity onPress={() => setSelectedSowingMonth(null)} style={styles.clearButton}>
+										<Text style={{ color: theme.primary }}>Clear</Text>
+									</TouchableOpacity>
+								</View>
+						)}
+
+						{/* harvest month picker for the second filter */}
+						{idx === 1 && openFilter === idx && (
+							<View style={styles.monthsWrapper}>
+								{months.map((m) => {
+									const selected = selectedHarvestMonth === m;
+									return (
+										<TouchableOpacity
+											key={m + '-harv'}
+											style={[styles.monthItem, selected && { borderColor: theme.primary, backgroundColor: theme.activeTabBg }]}
+											onPress={() => setSelectedHarvestMonth(selected ? null : m)}
+										>
+											<Text style={{ color: selected ? theme.primary : theme.text }}>{m.substring(0,3)}</Text>
+										</TouchableOpacity>
+									);
+								})}
+								<TouchableOpacity onPress={() => setSelectedHarvestMonth(null)} style={styles.clearButton}>
+									<Text style={{ color: theme.primary }}>Clear</Text>
+								</TouchableOpacity>
+							</View>
+						)}
+
+						{/* growing location multi-select for the third filter */}
+						{idx === 2 && openFilter === idx && (
+							<View style={styles.monthsWrapper}>
+								{locationOptions.map((opt) => {
+									const selected = !!selectedLocations[opt.key];
+									return (
+										<TouchableOpacity
+											key={opt.key}
+											style={[styles.monthItem, selected && { borderColor: theme.primary, backgroundColor: theme.activeTabBg }]}
+											onPress={() => setSelectedLocations((prev) => ({ ...prev, [opt.key]: !prev[opt.key] }))}
+										>
+											<Text style={{ color: selected ? theme.primary : theme.text }}>{opt.label}</Text>
+										</TouchableOpacity>
+									);
+								})}
+								<TouchableOpacity onPress={() => setSelectedLocations({})} style={styles.clearButton}>
+									<Text style={{ color: theme.primary }}>Clear</Text>
+								</TouchableOpacity>
+							</View>
+						)}
+						</React.Fragment>
+					))}
+				</View>
+			</View>
+
+			{sampleCrops
+				.filter((c) => (c.name || c.title || '').toLowerCase().includes((search || '').toLowerCase()))
+				.filter((crop) => {
+					// location filter: require ALL selected locations to be true on the crop (AND semantics)
+					const selectedLocationKeys = Object.keys(selectedLocations).filter((k) => selectedLocations[k]);
+					if (selectedLocationKeys.length > 0) {
+						const allMatch = selectedLocationKeys.every((k) => !!crop[k]);
+						if (!allMatch) return false;
+					}
+
+					if (!selectedSowingMonth && !selectedHarvestMonth) return true;
+					let sowingMatch = true;
+					if (selectedSowingMonth) {
+						const inSowing = isMonthInRange(selectedSowingMonth, crop.sowingStart, crop.sowingEnd);
+						const inPlanting = isMonthInRange(selectedSowingMonth, crop.plantingStart, crop.plantingEnd);
+						sowingMatch = inSowing || inPlanting;
+					}
+					let harvestMatch = true;
+					if (selectedHarvestMonth) {
+						harvestMatch = isMonthInRange(selectedHarvestMonth, crop.harvestStart, crop.harvestEnd);
+					}
+					return sowingMatch && harvestMatch;
+				})
+				.map((crop) => (
+					<View key={crop.id} style={[styles.card, { borderColor: theme.cardBorder, backgroundColor: theme.cardBackground }]}>
+						<Image source={{ uri: crop.image }} style={styles.image} />
+						<View style={styles.cardContent}>
+							<Text style={[styles.cardTitle, { color: theme.text }]}>{crop.name || crop.title}</Text>
+							<Text style={[styles.cardSubtitle, { color: theme.secondaryText }]}>{crop.subtitle || crop.cropDescription}</Text>
+							<TouchableOpacity style={[styles.button, { backgroundColor: theme.primary }]}> 
+								<Text style={styles.buttonText}>View Details</Text>
+							</TouchableOpacity>
+						</View>
+					</View>
+				))}
+
+		</ScrollView>
+	);
+}
+
+const styles = StyleSheet.create({
+	container: {
+		flex: 1,
+	},
+      titleSection: {
+    padding: 20,
+  },
+  titleText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+	appBar: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		paddingHorizontal: 12,
+		paddingVertical: 10,
+	},
+	appBarLeft: {
+		flexDirection: 'row',
+		alignItems: 'center',
+	},
+	appLogo: {
+		width: 34,
+		height: 34,
+		borderRadius: 18,
+		justifyContent: 'center',
+		alignItems: 'center',
+		marginRight: 8,
+	},
+	appName: {
+		fontSize: 14,
+		fontWeight: '600',
+	},
+	searchWrapper: {
+		marginTop: 12,
+	},
+	searchInput: {
+		height: 42,
+		borderRadius: 10,
+		paddingHorizontal: 12,
+		borderWidth: 1,
+	},
+	filtersContainer: {
+		marginTop: 12,
+		marginHorizontal: -4,
+		borderRadius: 8,
+		overflow: 'hidden',
+	},
+	filterRow: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		paddingVertical: 12,
+		paddingHorizontal: 12,
+		borderBottomWidth: 1,
+	},
+	filterLabel: {
+		fontSize: 14,
+	},
+	monthsWrapper: {
+		flexDirection: 'row',
+		flexWrap: 'wrap',
+		padding: 8,
+		gap: 6,
+		alignItems: 'center',
+	},
+	monthItem: {
+		paddingVertical: 6,
+		paddingHorizontal: 8,
+		borderRadius: 6,
+		borderWidth: 1,
+		marginRight: 6,
+	},
+	clearButton: {
+		marginLeft: 8,
+		paddingHorizontal: 8,
+		paddingVertical: 6,
+	},
+	card: {
+		marginHorizontal: 16,
+		marginBottom: 16,
+		borderRadius: 8,
+		overflow: 'hidden',
+		borderWidth: 1,
+	},
+	image: {
+		width: '100%',
+		height: 180,
+	},
+	cardContent: {
+		padding: 12,
+	},
+	cardTitle: {
+		fontSize: 18,
+		fontWeight: '600',
+	},
+	cardSubtitle: {
+		marginTop: 6,
+		fontSize: 13,
+		marginBottom: 10,
+	},
+	button: {
+		alignSelf: 'flex-start',
+		paddingVertical: 8,
+		paddingHorizontal: 14,
+		borderRadius: 6,
+	},
+	buttonText: {
+		color: '#fff',
+		fontWeight: '600',
+	},
+});

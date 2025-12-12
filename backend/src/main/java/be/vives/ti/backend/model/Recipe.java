@@ -3,45 +3,45 @@ package be.vives.ti.backend.model;
 import jakarta.persistence.*;
 import jakarta.persistence.criteria.CriteriaBuilder;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
 @Table(name = "recipes")
 public class Recipe extends BaseEntity{
-    @Column(name = "recipeName")
+    @Column(name = "recipe_name")
     private String recipeName;
 
     @ManyToOne
     @JoinColumn(name = "author", nullable = true)
     private User author;
 
-    @Column(name = "recipeDescription")
+    @Column(name = "recipe_description")
     private String recipeDescription;
 
-    @Column(name =  "prepTime")
+    @Column(name =  "prep_time")
     private String prepTime;
 
-    @Column(name = "cookTime")
+    @Column(name = "cook_time")
     private String cookTime;
 
     @Column(name = "image")
     private String imageURL;
 
-    @OneToMany
-    @JoinColumn(name = "recipeQuantityID")
-    private Set<RecipeQuantity> quantities;
+    @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RecipeQuantity> quantities = new ArrayList<>();
 
-    @OneToMany
-    @JoinColumn(name = "recipeStepID")
-    private Set<RecipeStep> steps;
+    @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RecipeStep> steps = new ArrayList<>();
 
     @ManyToOne
-    @JoinColumn(name = "courseID")
+    @JoinColumn(name = "course_id")
     private Course course;
 
     @ManyToOne
-    @JoinColumn(name = "categoryID")
+    @JoinColumn(name = "category_id")
     private Category category;
 
     public Recipe(){
@@ -57,8 +57,8 @@ public class Recipe extends BaseEntity{
         this.cookTime = cookTime;
         this.course = course;
         this.category = category;
-        this.quantities = new HashSet<>();
-        this.steps = new HashSet<>();
+        this.quantities = new ArrayList<>();
+        this.steps = new ArrayList<>();
     }
 
     public Recipe(String recipeName, User author,
@@ -74,8 +74,8 @@ public class Recipe extends BaseEntity{
         this.imageURL = imageURL;
         this.course = course;
         this.category = category;
-        this.quantities = new HashSet<>();
-        this.steps = new HashSet<>();
+        this.quantities = new ArrayList<>();
+        this.steps = new ArrayList<>();
     }
 
     public String getRecipeName(){
@@ -142,9 +142,20 @@ public class Recipe extends BaseEntity{
         return imageURL;
     }
 
-    public Set<RecipeQuantity> getQuantities(){
+    public Integer getAuthorId() {
+        return author != null ? author.getId() : null;
+    }
+
+    public Integer getCourseId(){
+        return course.getId();
+    }
+
+    public Integer getCategoryId(){
+        return category.getId();
+    }
+    public List<RecipeQuantity> getQuantities(){
         if(this.quantities == null){
-            this.quantities = new HashSet<>();
+            this.quantities = new ArrayList<>();
         }
         return quantities;
     }
@@ -152,24 +163,24 @@ public class Recipe extends BaseEntity{
     public Set<Ingredient> getIngredients(){
         Set<Ingredient> ingredients = new HashSet<>();
         if(this.quantities == null){
-            this.quantities = new HashSet<>();
+            this.quantities = new ArrayList<>();
         }
         for (RecipeQuantity quantity : quantities) {
             ingredients.add(quantity.getIngredient());
         }
         return ingredients;
     }
-    public void setQuantities(Set<RecipeQuantity> quantities) {
+    public void setQuantities(List<RecipeQuantity> quantities) {
         this.quantities = quantities;
     }
 
-    public void setSteps(Set<RecipeStep> steps) {
+    public void setSteps(List<RecipeStep> steps) {
         this.steps = steps;
     }
 
-    public Set<RecipeStep> getSteps() {
+    public List<RecipeStep> getSteps() {
         if(this.steps == null){
-            this.steps = new HashSet<>();
+            this.steps = new ArrayList<>();
         }
         return steps;
     }

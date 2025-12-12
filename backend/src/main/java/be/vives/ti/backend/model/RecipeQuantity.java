@@ -4,18 +4,18 @@ import jakarta.persistence.*;
 import jakarta.persistence.criteria.CriteriaBuilder;
 
 @Entity
-@Table(name = "recipeQuantities")
+@Table(name = "recipe_quantities")
 public class RecipeQuantity extends BaseEntity{
     @ManyToOne
-    @JoinColumn(name = "recipeID")
+    @JoinColumn(name = "recipe_id")
     private Recipe recipe;
 
     @ManyToOne
-    @JoinColumn(name = "ingredientID")
+    @JoinColumn(name = "ingredient_id")
     private Ingredient ingredient;
 
     @ManyToOne
-    @JoinColumn(name = "measurementID")
+    @JoinColumn(name = "measurement_id")
     private IngredientMeasurement measurement;
 
     @Column(name = "quantity")
@@ -49,5 +49,17 @@ public class RecipeQuantity extends BaseEntity{
 
     public void setQuantity(Double quantity) {
         this.quantity = quantity;
+    }
+
+    public void setRecipe(Recipe recipe) {
+        this.recipe = recipe;
+    }
+
+    public void setIngredient(Ingredient ingredient) {
+        this.ingredient = ingredient;
+    }
+
+    public void setMeasurement(IngredientMeasurement measurement) {
+        this.measurement = measurement;
     }
 }

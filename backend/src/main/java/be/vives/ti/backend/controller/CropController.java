@@ -10,6 +10,23 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/crops")
 public class CropController {
 
+    //GET ALL
+
+    //GET BY NAME
+
+    //GET BY INHOUSE
+
+    //GET BY INGARDEN
+
+    //GET BY INGREENHOUSE
+
+    //GET BY INPOTS
+
+    //POST ADD NEW
+
+    //UPDATE BY ID (NEW TIPS/ NAME/...)
+
+    //DELETE BY ID
 
 
 }

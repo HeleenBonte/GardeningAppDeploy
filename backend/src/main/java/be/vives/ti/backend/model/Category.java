@@ -5,17 +5,17 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "categories")
 public class Category extends BaseEntity{
-    @Column(name = "categoryName")
-    private Integer name;
+    @Column(name = "category_name")
+    private String name;
 
     public Category() {
     }
 
-    public Category(Integer name) {
+    public Category(String name) {
         this.name = name;
     }
 
-    public Integer getName() {
+    public String getName() {
         return name;
     }
 

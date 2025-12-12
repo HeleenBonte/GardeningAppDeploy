@@ -12,11 +12,11 @@ import java.util.Set;
 @Entity
 @Table(name = "ingredients")
 public class Ingredient extends BaseEntity{
-    @Column(name = "ingredientName")
+    @Column(name = "ingredient_name")
     private String name;
 
     @OneToOne
-    @JoinColumn(name = "cropID", nullable = true)
+    @JoinColumn(name = "crop_id", nullable = true)
     private Crop crop;
 
 //    @ManyToMany
