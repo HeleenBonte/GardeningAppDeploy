@@ -1,16 +1,22 @@
-import React, { useContext, useState } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import React from 'react';
+import { View, Text, Image, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme } from '../themes/ThemeContext';
-import sampleCrops from '../data/sampleCrops';
+import AppHeader from '../components/AppHeader';
+import useCropDetail from '../hooks/useCropDetail';
+import MONTHS, { isInRange } from '../lib/months';
 
 export default function CropDetailScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { theme } = useTheme();
+  const { theme, currentSeason } = useTheme();
 
-  const crop = route.params?.crop ?? sampleCrops[0];
-  const relatedRecipes = route.params?.relatedRecipes ?? (crop.recipes || []);
+  const routeCrop = route.params?.crop ?? null;
+  const cropId = route.params?.cropId ?? routeCrop?.id ?? null;
+  const { crop, relatedRecipes, loading, error, reload } = useCropDetail({ id: cropId, initialCrop: routeCrop });
+
+  // month helpers moved to ../lib/months.js
+
 
   function handleBack() {
     if (route.params?.onBack) route.params.onBack();
@@ -22,94 +28,138 @@ export default function CropDetailScreen() {
     else navigation.navigate('Recipe', { recipeId: id });
   }
 
+  if (loading) return (
+    <View style={[styles.container, { backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center' }]}>
+      <ActivityIndicator size="large" color={theme.primary} />
+      <Text style={{ color: theme.secondaryText, marginTop: 8 }}>Loading crop…</Text>
+    </View>
+  );
+
+  if (error) return (
+    <View style={[styles.container, { backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center', padding: 16 }]}>
+      <Text style={{ color: theme.secondaryText, marginBottom: 12 }}>{String(error)}</Text>
+      <TouchableOpacity style={[styles.button, { backgroundColor: theme.primary, paddingHorizontal: 16 }]} onPress={reload}>
+        <Text style={styles.viewButtonText}>Try Again</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   const renderRecipeItem = ({ item }) => (
-    <View style={[styles.recipeCard, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
-      <Image source={{ uri: item.image }} style={styles.recipeImage} />
-      <View style={styles.recipeBody}>
-        <Text style={[styles.recipeTitle, { color: theme.text }]} numberOfLines={2}>{item.name}</Text>
-        <Text style={[styles.recipeDesc, { color: theme.secondaryText }]} numberOfLines={2}>{item.description}</Text>
-        <View style={styles.recipeMeta}>
-          <Text style={[styles.metaLabel, { color: theme.text }]}>Prep: </Text>
-          <Text style={[styles.metaText, { color: theme.secondaryText }]}>{item.prepTime}</Text>
-          <Text style={[styles.metaLabel, { color: theme.text }, { marginLeft: 8 }]}>Cook: </Text>
-          <Text style={[styles.metaText, { color: theme.secondaryText }]}>{item.cookTime}</Text>
+    <View style={styles.recipeCardContainer}>
+      <View style={[styles.recipeCard, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+        <Image source={{ uri: item.imageURL || item.image }} style={styles.recipeImage} />
+        <View style={styles.recipeBody}>
+          <Text style={[styles.recipeTitle, { color: theme.text }]} numberOfLines={2}>{item.name}</Text>
+          <Text style={[styles.recipeDesc, { color: theme.secondaryText }]} numberOfLines={2}>{item.description || (item.recipeQuantities ? item.recipeQuantities.map(q => q.ingredientResponse?.name).filter(Boolean).join(', ') : '')}</Text>
+          <View style={styles.recipeMeta}>
+            <Text style={[styles.metaLabel, { color: theme.text }]}>Prep: </Text>
+            <Text style={[styles.metaText, { color: theme.secondaryText }]}>{item.prepTime}</Text>
+            <Text style={[styles.metaLabel, { color: theme.text }, { marginLeft: 8 }]}>Cook: </Text>
+            <Text style={[styles.metaText, { color: theme.secondaryText }]}>{item.cookTime}</Text>
+          </View>
+          <TouchableOpacity style={[styles.viewButton, { backgroundColor: theme.primary }]} onPress={() => handleViewRecipe(item.id)}>
+            <Text style={styles.viewButtonText}>View Recipe</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={[styles.button, { backgroundColor: theme.primary }]} onPress={() => handleViewRecipe(item.id)}>
-          <Text style={styles.viewButtonText}>View Recipe</Text>
-        </TouchableOpacity>
       </View>
     </View>
   );
 
   const ListHeader = () => (
-    <View style={styles.content}>
-      <View style={styles.headerRow}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Text style={[styles.backText, { color: theme.text }]}>← Back to Crops</Text>
-        </TouchableOpacity>
-      </View>
+    <View>
+      <AppHeader rightIcon="close" onRightPress={() => navigation?.goBack()} />
+      <View style={styles.content}>
 
-
-        <Image source={{ uri: crop.image }} style={styles.cropImage} />
+          <Image source={{ uri: crop?.image }} style={styles.cropImage} />
           <View style={styles.titleRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Text style={[styles.title, { color: theme.text }]}>{crop.name}</Text>
+
             </View>
           </View>
         <View style={styles.infoCol}>
 
 
-          <Text style={[styles.description, { color: theme.secondaryText }]}>{crop.description}</Text>
+          <Text style={[styles.description, { color: theme.secondaryText }]}>{crop.cropDescription}</Text>
 
           <View style={styles.timeline}>
             <View style={styles.timelineItem}>
               <Text style={[styles.timelineLabel, { color: theme.text }]}>Sowing Period</Text>
-              <Text style={[styles.timelineValue, { color: theme.secondaryText }]}>{crop.sowPeriod}</Text>
+              <View style={styles.monthsRow}>
+                {MONTHS.map((m, i) => {
+                  const active = isInRange(i, crop.sowingStart, crop.sowingEnd);
+                  return (
+                    <View
+                      key={m}
+                      style={[styles.monthBox, { backgroundColor: active ? theme.seasonCardBg : theme.imagePlaceholderBg }]}
+                    >
+                      <Text style={[styles.monthText, { color: active ? theme.primary : theme.secondaryText }]}>{m}</Text>
+                    </View>
+                  );
+                })}
+              </View>
             </View>
             <View style={styles.timelineItem}>
               <Text style={[styles.timelineLabel, { color: theme.text }]}>Planting Period</Text>
-              <Text style={[styles.timelineValue, { color: theme.secondaryText }]}>{crop.plantPeriod}</Text>
+              <View style={styles.monthsRow}>
+                {MONTHS.map((m, i) => {
+                  const active = isInRange(i, crop.plantingStart, crop.plantingEnd);
+                  return (
+                    <View
+                      key={m}
+                      style={[styles.monthBox, { backgroundColor: active ? theme.seasonCardBg : theme.imagePlaceholderBg }]}
+                    >
+                      <Text style={[styles.monthText, { color: active ? theme.primary : theme.secondaryText }]}>{m}</Text>
+                    </View>
+                  );
+                })}
+              </View>
             </View>
             <View style={styles.timelineItem}>
               <Text style={[styles.timelineLabel, { color: theme.text }]}>Harvest Period</Text>
-              <Text style={[styles.timelineValue, { color: theme.secondaryText }]}>{crop.harvestPeriod}</Text>
+              <View style={styles.monthsRow}>
+                {MONTHS.map((m, i) => {
+                  const active = isInRange(i, crop.harvestStart, crop.harvestEnd);
+                  return (
+                    <View
+                      key={m}
+                      style={[styles.monthBox, { backgroundColor: active ? theme.seasonCardBg : theme.imagePlaceholderBg }]}
+                    >
+                      <Text style={[styles.monthText, { color: active ? theme.primary : theme.secondaryText }]}>{m}</Text>
+                    </View>
+                  );
+                })}
+              </View>
             </View>
           </View>
         </View>
 
-
-      <View style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
-        <Text style={[styles.cardTitle, { color: theme.text }]}>Maintenance Guide</Text>
-        <Text style={[styles.cardSubtitle, { color: theme.secondaryText }]}>Essential care instructions for healthy plants</Text>
+      <View style={[styles.card, { backgroundColor: theme.seasonCardBg , borderColor: theme.cardBorder }, { borderLeftWidth: 4, borderLeftColor: theme.primary }]}>
+        <Text style={[styles.cardTitle, { color: theme.text }]}>Growing locations</Text>
+        <Text style={[styles.cardSubtitle, { color: theme.secondaryText }]}>Where can you grow this crop</Text>
         <View style={styles.cardContent}>
-          {Array.isArray(crop.maintenance) && crop.maintenance.map((m, i) => (
-            <View key={i} style={styles.listItem}>
-              <Text style={[styles.bullet, { color: theme.text }]}>•</Text>
-              <Text style={[styles.listText, { color: theme.secondaryText }]}>{m}</Text>
-            </View>
-          ))}
+          <Text style={[styles.listText, { color: theme.secondaryText }]}>{crop.inHouse ? '- This plant can be grown indoors' : '- This plant cannot be grown indoors'}</Text>
+          <Text style={[styles.listText, { color: theme.secondaryText }]}>{crop.inGarden ? '- This plant can be grown in a garden' : '- This plant cannot be grown in a garden'}</Text>
+          <Text style={[styles.listText, { color: theme.secondaryText }]}>{crop.inGreenhouse ? '- This plant can be grown in a greenhouse' : '- This plant cannot be grown in a greenhouse'}</Text>
+          <Text style={[styles.listText, { color: theme.secondaryText }]}>{crop.inPots ? '- This plant can be grown in pots' : '- This plant cannot be grown in pots'}</Text>
         </View>
       </View>
 
-      <View style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
+      <View style={[styles.card, { backgroundColor: theme.seasonCardBg , borderColor: theme.cardBorder }, { borderLeftWidth: 4, borderLeftColor: theme.primary }]}>
         <Text style={[styles.cardTitle, { color: theme.text }]}>Tips & Tricks</Text>
         <Text style={[styles.cardSubtitle, { color: theme.secondaryText }]}>Expert advice for the best results</Text>
         <View style={styles.cardContent}>
-          {Array.isArray(crop.tips) && crop.tips.map((t, i) => (
-            <View key={i} style={styles.listItem}>
-              <Text style={[styles.bullet, { color: theme.text }]}>•</Text>
-              <Text style={[styles.listText, { color: theme.secondaryText }]}>{t}</Text>
-            </View>
-          ))}
+              <Text style={[styles.listText, { color: theme.secondaryText }]}>{crop.cropTips}</Text>
         </View>
       </View>
 
       {relatedRecipes.length > 0 && (
-        <View style={[styles.recipesSection, styles.content]}>
+        <View style={[styles.recipesSection, { borderTopWidth: 2, borderTopColor: theme.primary, paddingTop: 8 }]}> 
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Recipes Using {crop.name} {crop.emoji ?? ''}</Text>
           <Text style={[styles.sectionSubtitle, { color: theme.secondaryText }]}>Delicious ways to use your fresh harvest</Text>
         </View>
       )}
+    </View>
     </View>
   );
 
@@ -136,25 +186,23 @@ const styles = StyleSheet.create({
   cropImage: { aspectRatio: 4 / 3, borderRadius: 12, marginRight: 12 },
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   title: { fontSize: 24, fontWeight: '700', color: '#071126' },
-  emoji: { fontSize: 22, marginLeft: 6 },
   description: { marginTop: 8, marginBottom: 12, color: '#334155' },
   timeline: { marginTop: 4 },
   timelineItem: { marginBottom: 8 },
   timelineLabel: { fontSize: 14, fontWeight: '600', color: '#0f172a' },
   timelineValue: { fontSize: 13, color: '#475569' },
   card: { backgroundColor: '#fff', borderRadius: 12, padding: 12, marginTop: 12, borderWidth: 1, borderColor: '#e6eef6' },
-  cardDark: { backgroundColor: '#071426', borderColor: '#1f2b3a' },
   cardTitle: { fontSize: 16, fontWeight: '700', marginBottom: 4, color: '#071126' },
   cardSubtitle: { fontSize: 13, color: '#475569', marginBottom: 8 },
   cardContent: { marginTop: 4 },
   listItem: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 },
-  bullet: { width: 18, fontSize: 16, color: '#0f172a' },
   listText: { flex: 1, color: '#475569' },
   recipesSection: { marginTop: 16 },
   sectionTitle: { fontSize: 18, fontWeight: '700', marginBottom: 4, color: '#071126' },
-  sectionSubtitle: { fontSize: 13, color: '#475569', marginBottom: 12 },
+  sectionSubtitle: { fontSize: 13, color: '#475569'},
   recipeRow: { justifyContent: 'space-between' },
   recipeCard: { borderRadius: 10, overflow: 'hidden', marginBottom: 12, borderWidth: 1, borderColor: '#e6eef6' },
+  recipeCardContainer: { paddingHorizontal: 16 },
   recipeImage: { width: '100%', height: 120 },
   recipeBody: { padding: 8 },
   recipeTitle: { fontSize: 14, fontWeight: '700', color: '#071126' },
@@ -162,9 +210,15 @@ const styles = StyleSheet.create({
   recipeMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
   metaLabel: { fontWeight: '600', color: '#071126', fontSize: 12 },
   metaText: { color: '#475569', fontSize: 12 },
-  viewButton: { marginTop: 8, backgroundColor: '#16a34a', paddingVertical: 8, borderRadius: 8, alignItems: 'center' },
-  viewButtonDark: { backgroundColor: '#0b9b3a' },
-  viewButtonText: { color: '#fff', fontWeight: '700' },
+  monthsRow: { flexDirection: 'row', marginTop: 8, flexWrap: 'nowrap' },
+  monthBox: { width: 26, height: 20, borderRadius: 6, marginRight: 6, alignItems: 'center', justifyContent: 'center' },
+  monthText: { fontSize: 10, fontWeight: '700' },
+  viewButton: { 		alignSelf: 'flex-start',
+		paddingVertical: 8,
+		paddingHorizontal: 14,
+		borderRadius: 6, },
+  viewButtonText: { 		color: '#fff',
+		fontWeight: '600', },
   textLight: { color: '#e6eef6' },
   textMutedLight: { color: '#aab6c2' },
 });

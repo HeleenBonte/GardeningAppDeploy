@@ -1,11 +1,20 @@
-FROM maven:3.9-eclipse-temurin-21 AS build
+FROM maven:3.9-eclipse-temurin-25 AS build
 WORKDIR /app
+# copy pom first to cache dependencies
 COPY pom.xml .
-COPY src ./src
-RUN mvn clean package -DskipTests
+RUN mvn -B dependency:go-offline
 
-FROM eclipse-temurin:21-jre
+COPY src ./src
+RUN mvn -B clean package -DskipTests
+
+FROM eclipse-temurin:25-jre
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
-EXPOSE 3000
+
+# create a non-root user and set ownership
+RUN addgroup --system app && adduser --system --ingroup app appuser \
+    && chown -R appuser:app /app
+USER appuser
+
+EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

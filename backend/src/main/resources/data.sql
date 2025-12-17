@@ -9,9 +9,9 @@ MERGE INTO users (id, user_name, user_email, password, role) KEY(id) VALUES (3, 
 
 -- Crops
 -- Crops
-MERGE INTO crops (id, cropname, sowing_start, sowing_end, planting_start, planting_end, harvest_start, harvest_end, in_house, in_pots, in_garden, in_greenhouse, crop_description, crop_tips) KEY(id) VALUES (1, 'Tomato', 3, 4, 4, 6, 7, 9, TRUE, TRUE, TRUE, FALSE, 'A popular summer crop', 'Keep warm and provide support');
-MERGE INTO crops (id, cropname, sowing_start, sowing_end, planting_start, planting_end, harvest_start, harvest_end, in_house, in_pots, in_garden, in_greenhouse, crop_description, crop_tips) KEY(id) VALUES (2, 'Basil', 4, 5, 5, 6, 7, 9, TRUE, TRUE, TRUE, FALSE, 'Aromatic herb', 'Pinch regularly to encourage growth');
-MERGE INTO crops (id, cropname, sowing_start, sowing_end, planting_start, planting_end, harvest_start, harvest_end, in_house, in_pots, in_garden, in_greenhouse, crop_description, crop_tips) KEY(id) VALUES (3, 'Carrot', 2, 4, 3, 5, 7, 10, FALSE, FALSE, TRUE, FALSE, 'Root vegetable', 'Thin seedlings for proper growth');
+MERGE INTO crops (id, cropname, sowing_start, sowing_end, planting_start, planting_end, harvest_start, harvest_end, in_house, in_pots, in_garden, in_greenhouse, crop_description, crop_tips, image) KEY(id) VALUES (1, 'Tomato', 3, 4, 4, 6, 7, 9, TRUE, TRUE, TRUE, FALSE, 'A popular summer crop', 'Keep warm and provide support','https://images.unsplash.com/photo-1607305387299-a3d9611cd469?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+MERGE INTO crops (id, cropname, sowing_start, sowing_end, planting_start, planting_end, harvest_start, harvest_end, in_house, in_pots, in_garden, in_greenhouse, crop_description, crop_tips, image) KEY(id) VALUES (2, 'Basil', 4, 5, 5, 6, 7, 9, TRUE, TRUE, TRUE, FALSE, 'Aromatic herb', 'Pinch regularly to encourage growth','https://images.unsplash.com/photo-1651773485326-41b9ae7d3c05?q=80&w=2030&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+MERGE INTO crops (id, cropname, sowing_start, sowing_end, planting_start, planting_end, harvest_start, harvest_end, in_house, in_pots, in_garden, in_greenhouse, crop_description, crop_tips, image) KEY(id) VALUES (3, 'Carrot', 2, 4, 3, 5, 7, 10, FALSE, FALSE, TRUE, FALSE, 'Root vegetable', 'Thin seedlings for proper growth','https://images.unsplash.com/photo-1582515073490-39981397c445?q=80&w=2069&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
 
 -- Categories
 -- Categories
@@ -38,8 +38,8 @@ MERGE INTO ingredients (id, ingredient_name, crop_id) KEY(id) VALUES (4, 'Flour'
 
 -- Recipes
 -- Recipes
-MERGE INTO recipes (id, recipe_name, author, recipe_description, prep_time, cook_time, image, course_id, category_id) KEY(id) VALUES (1, 'Tomato Basil Salad', 1, 'Fresh salad with tomatoes and basil', '10 min', '0 min', NULL, 2, 1);
-MERGE INTO recipes (id, recipe_name, author, recipe_description, prep_time, cook_time, image, course_id, category_id) KEY(id) VALUES (2, 'Carrot Soup', 2, 'Warm carrot soup', '20 min', '30 min', NULL, 1, 2);
+MERGE INTO recipes (id, recipe_name, author, recipe_description, prep_time, cook_time, image, course_id, category_id) KEY(id) VALUES (1, 'Tomato Basil Salad', 1, 'Fresh salad with tomatoes and basil', '10 min', '0 min', 'https://images.unsplash.com/photo-1622637103261-ae624e188bd0?q=80&w=1930&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 2, 1);
+MERGE INTO recipes (id, recipe_name, author, recipe_description, prep_time, cook_time, image, course_id, category_id) KEY(id) VALUES (2, 'Carrot Soup', 2, 'Warm carrot soup', '20 min', '30 min', 'https://images.unsplash.com/photo-1666083580269-6f409e1765d8?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 1, 2);
 
 -- Recipe quantities
 -- Recipe quantities

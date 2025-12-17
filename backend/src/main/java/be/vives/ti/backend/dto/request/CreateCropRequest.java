@@ -43,6 +43,8 @@ public record CreateCropRequest(
         @NotBlank(message = "Description is required")
         String description,
 
-        String cropTips
+        String cropTips,
+
+        String image
 ) {
 }

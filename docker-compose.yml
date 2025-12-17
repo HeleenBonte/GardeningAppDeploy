@@ -1,15 +1,31 @@
+version: "3.8"
 services:
   backend:
     build: ./backend
     ports:
-      - "3000:3000"
+      - "8080:8080"
     depends_on:
-      db:
-        condition: service_healthy
+      - db
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
   frontend:
     build: ./frontend
     ports:
-      - "8080:8080"
+      - "3000:3000"
+    restart: unless-stopped
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@local.dev}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+    ports:
+      - "8081:80"
+    depends_on:
+      - db
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
   db:
     image: postgres:18
     restart: always
@@ -17,11 +33,18 @@ services:
     env_file:
       - .env
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready"]
-      interval: 1s
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
       timeout: 5s
       retries: 10
     volumes:
-      - ./database/db-data/:/var/lib/postgresql
+      - db_data:/var/lib/postgresql
+      - ./database/initdb/:/docker-entrypoint-initdb.d:ro
     ports:
       - "5432:5432"
+
+volumes:
+  db_data:
+    driver: local
+  pgadmin_data:
+    driver: local

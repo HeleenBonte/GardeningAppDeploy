@@ -1,14 +1,12 @@
--- SQL schema derived from JPA entity classes in backend/src/main/java/be/vives/ti/backend/model
--- Target: PostgreSQL
+-- PostgreSQL-compatible schema for the gardening app
+-- (Converted from H2-style schema)
 
--- Disable referential integrity to allow dropping tables in any order
-SET REFERENTIAL_INTEGRITY FALSE;
-
+-- Drop tables and constraints if they exist so init is idempotent
 -- Drop join tables first
 DROP TABLE IF EXISTS user_recipes;
 DROP TABLE IF EXISTS user_crops;
 
--- Drop FK constraints on snake_case tables (if present)
+-- Drop FK constraints (if present) - safe to run before dropping tables
 ALTER TABLE IF EXISTS recipe_quantities DROP CONSTRAINT IF EXISTS fk_rq_ingredient;
 ALTER TABLE IF EXISTS recipe_quantities DROP CONSTRAINT IF EXISTS fk_rq_recipe;
 ALTER TABLE IF EXISTS recipe_quantities DROP CONSTRAINT IF EXISTS fk_rq_measurement;
@@ -32,9 +30,6 @@ DROP TABLE IF EXISTS courses;
 DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS crops;
 DROP TABLE IF EXISTS users;
-
-SET REFERENTIAL_INTEGRITY TRUE;
-
 
 
 -- Users table
@@ -128,7 +123,7 @@ CREATE TABLE recipe_steps (
   CONSTRAINT fk_rs_recipe FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
 );
 
--- Many-to-many user favorite crops. Note: entity declared join columns as cropID (joinColumns) and userID (inverseJoinColumns)
+-- Many-to-many user favorite crops
 CREATE TABLE user_crops (
   crop_id integer NOT NULL,
   user_id integer NOT NULL,
@@ -137,7 +132,7 @@ CREATE TABLE user_crops (
   CONSTRAINT fk_usercrops_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Many-to-many user favorite recipes. Entity defines joinColumns recipeID and inverseJoinColumns userID
+-- Many-to-many user favorite recipes
 CREATE TABLE user_recipes (
   recipe_id integer NOT NULL,
   user_id integer NOT NULL,

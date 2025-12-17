@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Image, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../themes/ThemeContext';
 import AppHeader from '../components/AppHeader';
 
-import sampleCrops from '../data/sampleCrops';
-import sampleRecipes from '../data/sampleRecipes';
-import { Month } from '../models/Crop';
+import useCrops from '../hooks/useCrops';
+import { filterCrop, Month, isMonthInRange } from '../lib/cropFilters';
 
 export default function CropScreen() {
     const navigation = useNavigation();
 	const { theme } = useTheme();
 	const [search, setSearch] = useState('');
+	const { crops, recipes, loading, error, reload } = useCrops();
 	const [openFilter, setOpenFilter] = useState(null);
 	const [selectedHarvestMonth, setSelectedHarvestMonth] = useState(null);
 	const [selectedSowingMonth, setSelectedSowingMonth] = useState(null);
@@ -31,21 +31,6 @@ export default function CropScreen() {
 	];
 
 	const months = Object.values(Month);
-
-	function monthIndex(monthName) {
-		return months.indexOf(monthName);
-	}
-
-	function isMonthInRange(monthName, startName, endName) {
-		if (!monthName || !startName || !endName) return false;
-		const m = monthIndex(monthName);
-		const s = monthIndex(startName);
-		const e = monthIndex(endName);
-		if (s === -1 || e === -1 || m === -1) return false;
-		if (s <= e) return m >= s && m <= e;
-		// wrap-around (e.g., Nov -> Feb)
-		return m >= s || m <= e;
-	}
 
 	return (
 		<ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -142,28 +127,25 @@ export default function CropScreen() {
 				</View>
 			</View>
 
-			{sampleCrops
-				.filter((c) => (c.name || c.title || '').toLowerCase().includes((search || '').toLowerCase()))
-				.filter((crop) => {
-					const selectedLocationKeys = Object.keys(selectedLocations).filter((k) => selectedLocations[k]);
-					if (selectedLocationKeys.length > 0) {
-						const allMatch = selectedLocationKeys.every((k) => !!crop[k]);
-						if (!allMatch) return false;
-					}
+			{error && (
+				<View style={{ padding: 16 }}>
+					<Text style={{ color: theme.error || 'red' }}>Failed to load crops: {String(error)}</Text>
+				</View>
+			)}
 
-					if (!selectedSowingMonth && !selectedHarvestMonth) return true;
-					let sowingMatch = true;
-					if (selectedSowingMonth) {
-						const inSowing = isMonthInRange(selectedSowingMonth, crop.sowingStart, crop.sowingEnd);
-						const inPlanting = isMonthInRange(selectedSowingMonth, crop.plantingStart, crop.plantingEnd);
-						sowingMatch = inSowing || inPlanting;
-					}
-					let harvestMatch = true;
-					if (selectedHarvestMonth) {
-						harvestMatch = isMonthInRange(selectedHarvestMonth, crop.harvestStart, crop.harvestEnd);
-					}
-					return sowingMatch && harvestMatch;
-				})
+			{loading && (
+				<View style={{ padding: 16 }}>
+					<Text style={{ color: theme.secondaryText }}>Loading...</Text>
+				</View>
+			)}
+
+			{crops
+  				.filter(crop => filterCrop(crop, {
+    				search,
+    				selectedSowingMonth,
+    				selectedHarvestMonth,
+    				selectedLocations
+  				}))
 				.map((crop) => (
 					<View key={crop.id} style={[styles.card, { borderColor: theme.cardBorder, backgroundColor: theme.cardBackground }]}>
 						<Image source={{ uri: crop.image }} style={styles.image} />
@@ -173,7 +155,7 @@ export default function CropScreen() {
 							<TouchableOpacity
 								style={[styles.button, { backgroundColor: theme.primary }]}
 								onPress={() => {
-									const relatedRecipes = sampleRecipes.filter(r => String(r.cropId) === String(crop.id));
+									const relatedRecipes = recipes.filter(r => String(r.cropId) === String(crop.id));
 									navigation.navigate('CropDetail', { crop, relatedRecipes });
 								}}
 							>

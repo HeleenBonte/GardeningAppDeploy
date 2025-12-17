@@ -71,9 +71,11 @@ export default function HomeScreen({ navigation }) {
 
       {/* Explore Crops Section */}
       <View style={[styles.featureCard, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
-        <View style={[styles.featureImagePlaceholder, { backgroundColor: theme.imagePlaceholderBg }]}>
-          <Ionicons name="leaf" size={60} color={theme.iconColor} />
-        </View>
+        <Image
+          source={{ uri: 'https://images.unsplash.com/photo-1438109382753-8368e7e1e7cf?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' }}
+          style={[styles.featureImagePlaceholder, { backgroundColor: theme.imagePlaceholderBg }]}
+          resizeMode="cover"
+        />
         <View style={styles.featureContent}>
           <View style={styles.featureHeader}>
             <Ionicons name="leaf" size={20} color={theme.primary} />
@@ -95,9 +97,12 @@ export default function HomeScreen({ navigation }) {
 
       {/* Discover Recipes Section */}
       <View style={[styles.featureCard, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
-        <View style={[styles.featureImagePlaceholder, { backgroundColor: theme.imagePlaceholderBg }]}>
-          <Ionicons name="restaurant" size={60} color={theme.iconColor} />
-        </View>
+        <Image
+          source={{ uri: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' }}
+          style={[styles.featureImagePlaceholder, { backgroundColor: theme.imagePlaceholderBg }]}
+          resizeMode="cover"
+        />
+
         <View style={styles.featureContent}>
           <View style={styles.featureHeader}>
             <Ionicons name="book" size={20} color={theme.primary} />
@@ -106,9 +111,14 @@ export default function HomeScreen({ navigation }) {
           <Text style={[styles.featureDescription, { color: theme.secondaryText }]}>
             Find delicious ways to use your fresh harvest
           </Text>
-          <TouchableOpacity style={[styles.featureButton, { backgroundColor: theme.primary }]}>
-            <Text style={styles.featureButtonText}>View All Recipes</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.featureButton, { backgroundColor: theme.primary }]}
+              onPress={() => navigation.navigate('Recipes')}
+              accessibilityRole="button"
+              accessibilityLabel="View all recipes"
+            >
+              <Text style={styles.featureButtonText}>View All Recipes</Text>
+            </TouchableOpacity>
         </View>
       </View>
     </ScrollView>

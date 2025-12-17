@@ -25,4 +25,9 @@ public class CropService {
         Page<Crop> cropPage = cropRepository.findAll(pageable);
         return cropPage.map(cropMapper::toResponse);
     }
+
+    public CropResponse findById(int id){
+        Crop crop = cropRepository.findById(id).orElseThrow();
+        return cropMapper.toResponse(crop);
+    }
 }

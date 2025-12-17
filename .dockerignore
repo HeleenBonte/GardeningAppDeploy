@@ -1,0 +1,15 @@
+node_modules
+.expo
+.vscode
+android
+ios
+build
+dist
+npm-debug.log
+.log
+.git
+.DS_Store
+database
+target
+backend/target
+frontend/node_modules

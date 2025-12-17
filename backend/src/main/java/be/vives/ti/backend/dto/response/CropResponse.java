@@ -9,14 +9,15 @@ public record CropResponse(
         Month sowingEnd,
         Month plantingStart,
         Month plantingEnd,
-        Month harvestingStart,
-        Month harvestingEnd,
+        Month harvestStart,
+        Month harvestEnd,
         Boolean inHouse,
         Boolean inPots,
         Boolean inGarden,
         Boolean inGreenhouse,
         String cropDescription,
-        String cropTips
+        String cropTips,
+        String image
 
 ) {
 }

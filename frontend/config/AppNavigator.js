@@ -11,6 +11,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import CropDetailScreen from '../screens/CropDetailScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
+import RecipeScreen from '../screens/RecipeScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -58,7 +59,7 @@ function MainTabs() {
       />
       <Tab.Screen 
         name="Recipes" 
-        component={HomeScreen} 
+        component={RecipeScreen} 
         options={{ tabBarLabel: 'Recipes' }}
       />
       <Tab.Screen 

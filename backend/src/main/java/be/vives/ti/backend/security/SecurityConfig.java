@@ -32,6 +32,8 @@ public class SecurityConfig {
                         // Public endpoints - anyone can access
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/recipes/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/crops/**").permitAll()
+
                         .requestMatchers("/h2-console/**").permitAll()
 
                         // Swagger/OpenAPI endpoints - public access for API documentation

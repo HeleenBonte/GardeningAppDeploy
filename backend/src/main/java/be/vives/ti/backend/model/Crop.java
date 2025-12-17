@@ -50,9 +50,14 @@ public class Crop extends BaseEntity{
     @Column(name = "crop_tips")
     private String cropTips;
 
+    @Column(name = "image")
+    private String image;
+
     public Crop() {
 
     }
+
+
 
     public Crop(String name, Month sowingStart,
                 Month sowingEnd, Month plantingStart,
@@ -60,7 +65,7 @@ public class Crop extends BaseEntity{
                 Month harvestEnd, Boolean inHouse,
                 Boolean inPots, Boolean inGarden,
                 Boolean inGreenhouse, String cropDescription,
-                String cropTips) {
+                String cropTips, String image) {
         this.name = name;
         this.sowingStart = sowingStart;
         this.sowingEnd = sowingEnd;
@@ -74,6 +79,10 @@ public class Crop extends BaseEntity{
         this.inGreenhouse = inGreenhouse;
         this.cropDescription = cropDescription;
         this.cropTips = cropTips;
+        this.image = image;
+    }
+    public String getImage() {
+        return image;
     }
 
     public String getName() {
