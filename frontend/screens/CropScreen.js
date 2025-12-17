@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Image, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../themes/ThemeContext';
 import AppHeader from '../components/AppHeader';
 
 import sampleCrops from '../data/sampleCrops';
+import sampleRecipes from '../data/sampleRecipes';
 import { Month } from '../models/Crop';
 
 export default function CropScreen() {
+    const navigation = useNavigation();
 	const { theme } = useTheme();
 	const [search, setSearch] = useState('');
 	const [openFilter, setOpenFilter] = useState(null);
@@ -142,7 +145,6 @@ export default function CropScreen() {
 			{sampleCrops
 				.filter((c) => (c.name || c.title || '').toLowerCase().includes((search || '').toLowerCase()))
 				.filter((crop) => {
-					// location filter: require ALL selected locations to be true on the crop (AND semantics)
 					const selectedLocationKeys = Object.keys(selectedLocations).filter((k) => selectedLocations[k]);
 					if (selectedLocationKeys.length > 0) {
 						const allMatch = selectedLocationKeys.every((k) => !!crop[k]);
@@ -168,7 +170,13 @@ export default function CropScreen() {
 						<View style={styles.cardContent}>
 							<Text style={[styles.cardTitle, { color: theme.text }]}>{crop.name || crop.title}</Text>
 							<Text style={[styles.cardSubtitle, { color: theme.secondaryText }]}>{crop.subtitle || crop.cropDescription}</Text>
-							<TouchableOpacity style={[styles.button, { backgroundColor: theme.primary }]}> 
+							<TouchableOpacity
+								style={[styles.button, { backgroundColor: theme.primary }]}
+								onPress={() => {
+									const relatedRecipes = sampleRecipes.filter(r => String(r.cropId) === String(crop.id));
+									navigation.navigate('CropDetail', { crop, relatedRecipes });
+								}}
+							>
 								<Text style={styles.buttonText}>View Details</Text>
 							</TouchableOpacity>
 						</View>

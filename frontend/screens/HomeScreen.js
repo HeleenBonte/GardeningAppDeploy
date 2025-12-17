@@ -14,11 +14,9 @@ import AppHeader from '../components/AppHeader';
 export default function HomeScreen({ navigation }) {
   const { theme, isDarkMode, toggleTheme, currentSeason } = useTheme();
   
-  // TODO: Replace with actual user authentication logic
-  const isLoggedIn = false; // Set to true when user is authenticated
-  const username = "John"; // Replace with actual username from auth context
+  const isLoggedIn = false;
+  const username = "John"; 
   
-  // Season-specific emojis
   const seasonEmojis = {
     Fall: '🍂',
     Winter: '❄️',

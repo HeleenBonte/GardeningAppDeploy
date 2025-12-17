@@ -8,6 +8,9 @@ import { useTheme } from '../themes/ThemeContext';
 import HomeScreen from '../screens/HomeScreen';
 import CropScreen from '../screens/CropScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import CropDetailScreen from '../screens/CropDetailScreen';
+import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -76,6 +79,9 @@ export default function AppNavigator() {
         }}
       >
         <Stack.Screen name="Main" component={MainTabs} />
+        <Stack.Screen name="CropDetail" component={CropDetailScreen} />
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen 
           name="Settings" 
           component={SettingsScreen}

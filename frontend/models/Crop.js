@@ -18,9 +18,6 @@ export function createCrop(overrides = {}) {
   return {
     id: overrides.id || Date.now().toString(),
     name: overrides.name || '',
-    // legacy/title alias to support older UI code
-    title: overrides.title || overrides.name || '',
-    subtitle: overrides.subtitle || '',
     sowingStart: overrides.sowingStart || null,
     sowingEnd: overrides.sowingEnd || null,
     plantingStart: overrides.plantingStart || null,
@@ -31,8 +28,8 @@ export function createCrop(overrides = {}) {
     inPots: !!overrides.inPots,
     inGarden: !!overrides.inGarden,
     inGreenhouse: !!overrides.inGreenhouse,
-    cropDescription: overrides.cropDescription || '',
-    cropTips: overrides.cropTips || '',
+    Description: overrides.cropDescription || '',
+    Tips: overrides.cropTips || '',
     image: overrides.image || null,
   };
 }

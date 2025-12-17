@@ -31,7 +31,7 @@ export default function AppHeader({ title = 'Gardeners of the Galaxy', rightIcon
 			<HamburgerMenu
 				visible={menuVisible}
 				onClose={() => setMenuVisible(false)}
-				onNavigate={(screen) => navigation.navigate(screen)}
+				onNavigate={(name, params) => navigation.navigate(name, params)}
 				onToggleTheme={() => toggleTheme()}
 				isDarkMode={isDarkMode}
 			/>

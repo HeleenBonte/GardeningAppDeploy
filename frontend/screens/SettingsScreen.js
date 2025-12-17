@@ -15,14 +15,12 @@ import AppHeader from '../components/AppHeader';
 export default function SettingsScreen({ navigation }) {
   const { theme, isDarkMode, toggleTheme, currentSeason, seasonOverride, setSeasonOverride } = useTheme();
   
-  // State for settings
   const [displayLanguage, setDisplayLanguage] = useState('English');
   const [measurementSystem, setMeasurementSystem] = useState('Metric (Default)');
   const [translationsEnabled, setTranslationsEnabled] = useState(false);
   const [showTranslations, setShowTranslations] = useState(false);
   const [showMeasurementOptions, setShowMeasurementOptions] = useState(false);
   const [showSeasonOptions, setShowSeasonOptions] = useState(false);
-  // Seasons list used for manual override selection
   const seasons = ['Spring', 'Summer', 'Fall', 'Winter'];
   const languages = ['English', 'Dutch', 'French', 'German', 'Spanish'];
   const measurements = ['Metric (Default)', 'Imperial'];
@@ -416,7 +414,6 @@ const styles = StyleSheet.create({
   previewCardSubtitle: {
     fontSize: 14,
   },
-  /* Units card styles */
   unitsCard: {
     flexDirection: 'row',
     borderRadius: 12,

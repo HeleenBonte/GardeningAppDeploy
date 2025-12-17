@@ -1,8 +1,8 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import { getTheme, setTheme as persistTheme } from '../settings/storage';
 
 const ThemeContext = createContext();
 
-// Seasonal color schemes
 const seasonalColors = {
   Fall: {
     primary: '#FF6B35',
@@ -35,9 +35,7 @@ const createLightTheme = (season) => ({
   text: '#333',
   secondaryText: '#666',
   headerBg: seasonalColors[season].headerBg,
-  // blend a very subtle seasonal tint into card backgrounds for light mode
   cardBg: blendHex('#FFFFFF', seasonalColors[season].primary, 0.035),
-  // use the season primary as the card border color for a seasonal accent
   cardBorder: seasonalColors[season].secondary,
   seasonCardBg: seasonalColors[season].seasonCardBg,
   tabBorder: '#E0E0E0',
@@ -47,7 +45,6 @@ const createLightTheme = (season) => ({
   iconColor: '#999',
 });
 
-// Utility: blend two hex colors with given alpha for overlay color
 const hexToRgb = (hex) => {
   const h = hex.replace('#', '');
   const bigint = parseInt(h, 16);
@@ -75,22 +72,17 @@ const blendHex = (baseHex, overlayHex, alpha) => {
   return rgbToHex(r, g, b);
 };
 
-// Compute a slightly darker 'secondary' variant for each season's primary color
-// secondary = primary blended with black to make it less bright (subtle)
 Object.keys(seasonalColors).forEach((s) => {
   const primary = seasonalColors[s].primary;
-  // 18% white overlay to reduce brightness without changing hue dramatically
   seasonalColors[s].secondary = blendHex(primary, '#FFFFFF', 0.62);
 });
 
 const createDarkTheme = (season) => {
   const primary = seasonalColors[season].primary;
-  // subtle tints to give cards a seasonal hue in dark mode
-  const cardBg = blendHex('#252525', primary, 0.06); // 6% tint
-  const seasonCardBg = blendHex('#2D2D2D', primary, 0.08); // 8% tint
+  const cardBg = blendHex('#252525', primary, 0.06);
+  const seasonCardBg = blendHex('#2D2D2D', primary, 0.08);
   const imagePlaceholderBg = blendHex('#2D2D2D', primary, 0.04);
   const activeTabBg = blendHex('#3A3A3A', primary, 0.06);
-  // tint the dark card border slightly with the season color for a subtle accent
   const cardBorder = blendHex('#3A3A3A', primary, 0.12);
 
   return {
@@ -111,29 +103,30 @@ const createDarkTheme = (season) => {
 
 export const ThemeProvider = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
-  // Optional override for development/testing: when non-null, this season will be used instead of auto-detected
+  // Dev Override
   const [seasonOverride, setSeasonOverride] = useState(null);
 
   const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
+    setIsDarkMode((prev) => {
+      const next = !prev;
+      // persist preference (light/dark)
+      try {
+        persistTheme(next ? 'dark' : 'light');
+      } catch (e) {
+        // ignore persistence errors
+      }
+      return next;
+    });
   };
 
-  // Compute current season using month and day for more accurate boundaries
-  // Uses approximate astronomical season start dates (northern hemisphere):
-  // Spring: Mar 20, Summer: Jun 21, Fall: Sep 23, Winter: Dec 21
+
   const getCurrentSeason = (date = new Date()) => {
     const month = date.getMonth(); // 0 = Jan
     const day = date.getDate();
 
-    // Helper to compare month/day
     const isOnOrAfter = (m, d) => (month > m) || (month === m && day >= d);
 
-    if (isOnOrAfter(11, 21) || isOnOrAfter(0, 1) && !isOnOrAfter(2, 19)) {
-      // Dec 21 - Mar 19 => Winter
-      // The logic below will correctly capture Dec 21 -> end of year and Jan/Feb
-    }
 
-    // Determine season
     // Winter: Dec 21 - Mar 19
     if ( (month === 11 && day >= 21) || month === 0 || month === 1 || (month === 2 && day < 20) ) {
       return 'Winter';
@@ -155,6 +148,22 @@ export const ThemeProvider = ({ children }) => {
 
   const currentSeason = seasonOverride || getCurrentSeason();
   const theme = isDarkMode ? createDarkTheme(currentSeason) : createLightTheme(currentSeason);
+
+  // Load persisted theme preference on mount
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const saved = await getTheme();
+        if (!mounted || typeof saved === 'undefined' || saved === null) return;
+        if (saved === 'dark') setIsDarkMode(true);
+        else if (saved === 'light') setIsDarkMode(false);
+      } catch (e) {
+        // ignore
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   return (
     <ThemeContext.Provider value={{ theme, isDarkMode, toggleTheme, currentSeason, seasonOverride, setSeasonOverride }}>
