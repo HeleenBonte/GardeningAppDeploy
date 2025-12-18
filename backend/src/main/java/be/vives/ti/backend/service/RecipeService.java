@@ -5,9 +5,7 @@ import be.vives.ti.backend.dto.request.CreateRecipeRequest;
 import be.vives.ti.backend.dto.request.UpdateRecipeRequest;
 import be.vives.ti.backend.exceptions.RecipeException;
 import be.vives.ti.backend.mapper.RecipeMapper;
-import be.vives.ti.backend.model.Category;
-import be.vives.ti.backend.model.Course;
-import be.vives.ti.backend.model.Recipe;
+import be.vives.ti.backend.model.*;
 import be.vives.ti.backend.repository.CategoryRepository;
 import be.vives.ti.backend.repository.CourseRepository;
 import be.vives.ti.backend.repository.RecipeRepository;
@@ -83,7 +81,7 @@ public class RecipeService {
         // build quantities from request (link ingredients/measurement and recipe)
         if (request.quantities() != null) {
             for (var qReq : request.quantities()) {
-                be.vives.ti.backend.model.RecipeQuantity rq = new be.vives.ti.backend.model.RecipeQuantity();
+                RecipeQuantity rq = new RecipeQuantity();
                 rq.setQuantity(qReq.quantity());
                 ingredientRepository.findById(qReq.ingredientId()).ifPresent(rq::setIngredient);
                 measurementRepository.findById(qReq.measurementId()).ifPresent(rq::setMeasurement);
@@ -95,7 +93,7 @@ public class RecipeService {
         // build steps from request
         if (request.steps() != null) {
             for (var sReq : request.steps()) {
-                be.vives.ti.backend.model.RecipeStep rs = new be.vives.ti.backend.model.RecipeStep();
+                RecipeStep rs = new RecipeStep();
                 rs.setStepNumber(sReq.stepNumber());
                 rs.setDescription(sReq.description());
                 rs.setRecipe(recipe);
@@ -151,5 +149,16 @@ public class RecipeService {
                     log.info("Updated recipe with id: {}", id);
                     return recipeMapper.toResponse(updatedRecipe);
                 });
+    }
+
+    public Boolean delete(int id){
+        log.debug("Deleting recipe with id: {}", id);
+        if(!recipeRepository.existsById(id)){
+            log.warn("Recipe with id: {} not found for deletion", id);
+            return false;
+        }
+        recipeRepository.deleteById(id);
+        log.info("Deleted recipe with id: {}", id);
+        return true;
     }
 }

@@ -3,6 +3,7 @@ add new recipe screen
 favorites screen
 account screen
 auth via api
+logout after jwt expires
 converter logic voor measurements
 accessibility
 translations:

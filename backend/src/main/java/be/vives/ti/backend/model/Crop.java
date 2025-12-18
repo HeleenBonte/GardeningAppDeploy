@@ -136,4 +136,60 @@ public class Crop extends BaseEntity{
     public String getCropTips() {
         return cropTips;
     }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setSowingStart(Month sowingStart) {
+        this.sowingStart = sowingStart;
+    }
+
+    public void setSowingEnd(Month sowingEnd) {
+        this.sowingEnd = sowingEnd;
+    }
+
+    public void setPlantingStart(Month plantingStart) {
+        this.plantingStart = plantingStart;
+    }
+
+    public void setPlantingEnd(Month plantingEnd) {
+        this.plantingEnd = plantingEnd;
+    }
+
+    public void setHarvestStart(Month harvestStart) {
+        this.harvestStart = harvestStart;
+    }
+
+    public void setHarvestEnd(Month harvestEnd) {
+        this.harvestEnd = harvestEnd;
+    }
+
+    public void setInHouse(Boolean inHouse) {
+        this.inHouse = inHouse;
+    }
+
+    public void setInPots(Boolean inPots) {
+        this.inPots = inPots;
+    }
+
+    public void setInGarden(Boolean inGarden) {
+        this.inGarden = inGarden;
+    }
+
+    public void setInGreenhouse(Boolean inGreenhouse) {
+        this.inGreenhouse = inGreenhouse;
+    }
+
+    public void setCropDescription(String cropDescription) {
+        this.cropDescription = cropDescription;
+    }
+
+    public void setCropTips(String cropTips) {
+        this.cropTips = cropTips;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
+    }
 }

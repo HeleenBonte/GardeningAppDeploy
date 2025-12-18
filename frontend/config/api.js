@@ -3,7 +3,8 @@ import Constants from 'expo-constants';
 const PROD_URL = 'https://api.yourdomain.com';
 
 // Default to the prior hard-coded host, but derive dynamically in dev
-let API_BASE_URL = 'http://192.168.129.44:8080';
+//let API_BASE_URL = 'http://192.168.129.44:8080';
+let API_BASE_URL = 'http://10.37.249.133:8080';
 if (__DEV__) {
     // Try several places where Expo may expose the dev host
     const debuggerHost = Constants.manifest?.debuggerHost

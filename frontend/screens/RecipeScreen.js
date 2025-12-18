@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AppHeader from '../components/AppHeader';
 import { useTheme } from '../themes/ThemeContext';
 import useRecipes from '../hooks/useRecipes';
+import { useIsFocused } from '@react-navigation/native';
 import { filterRecipe } from '../lib/recipeFilters';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200&auto=format&fit=crop';
@@ -66,6 +67,21 @@ function RecipeCard({ recipe, theme }) {
 export default function RecipeScreen() {
   const { theme } = useTheme();
   const { recipes, loading, error, reload } = useRecipes();
+  const isFocused = useIsFocused();
+
+  useEffect(() => {
+    if (isFocused) reload();
+  }, [isFocused, reload]);
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await reload();
+    } finally {
+      setRefreshing(false);
+    }
+  };
   const [search, setSearch] = useState('');
   const [selectedFilters, setSelectedFilters] = useState([]);
 
@@ -79,13 +95,15 @@ export default function RecipeScreen() {
       <View style={styles.hero}>
         <View>
           <Text style={[styles.title, { color: theme.text }]}>Recipe Collection</Text>
-          <Text style={[styles.subtitle, { color: theme.secondaryText }]}>Discover delicious recipes featuring fresh garden ingredients</Text>
         </View>
         <TouchableOpacity style={[styles.addButton, { borderColor: theme.primary }]}> 
           <Ionicons name="add" size={18} color={theme.primary} />
           <Text style={[styles.addButtonText, { color: theme.primary }]}>Add Recipe</Text>
         </TouchableOpacity>
       </View>
+            <View style={styles.subtitleSection}>
+            <Text style={[styles.subtitle, { color: theme.secondaryText }]}>Discover delicious recipes featuring fresh garden ingredients</Text>
+        </View>
 
       <View style={[styles.filterCard, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
         <View style={styles.filterHeader}>
@@ -145,6 +163,8 @@ export default function RecipeScreen() {
       data={filteredRecipes}
       keyExtractor={(item) => String(item.id)}
       renderItem={({ item }) => <RecipeCard recipe={item} theme={theme} />}
+      onRefresh={onRefresh}
+      refreshing={refreshing}
       ListHeaderComponent={renderHeader}
       contentContainerStyle={styles.listContent}
       ListEmptyComponent={(
@@ -160,13 +180,14 @@ export default function RecipeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   listContent: { paddingBottom: 24 },
-  header: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12, gap: 12 },
-  hero: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 },
-  title: { fontSize: 22, fontWeight: '700' },
+  header: { paddingBottom: 12, gap: 12 },
+  hero: { paddingHorizontal: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 },
+  title: { padding: 8, fontSize: 22, fontWeight: '700' },
+  subtitleSection: { paddingHorizontal: 20, paddingBottom: 12 },
   subtitle: { fontSize: 13, marginTop: 4, lineHeight: 18 },
   addButton: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1 },
   addButtonText: { fontWeight: '600', fontSize: 14 },
-  filterCard: { borderRadius: 12, borderWidth: 1, padding: 14, gap: 10 },
+  filterCard: { marginHorizontal: 20, paddingHorizontal: 16, borderRadius: 12, borderWidth: 1, padding: 14, gap: 10 },
   filterHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   filterHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   filterIconCircle: { width: 30, height: 30, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },

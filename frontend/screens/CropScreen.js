@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Image, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, ScrollView, Image, StyleSheet, TouchableOpacity, TextInput, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { useTheme } from '../themes/ThemeContext';
 import AppHeader from '../components/AppHeader';
 
@@ -13,6 +13,21 @@ export default function CropScreen() {
 	const { theme } = useTheme();
 	const [search, setSearch] = useState('');
 	const { crops, recipes, loading, error, reload } = useCrops();
+	const isFocused = useIsFocused();
+
+	useEffect(() => {
+		if (isFocused) reload();
+	}, [isFocused, reload]);
+
+	const [refreshing, setRefreshing] = useState(false);
+	const onRefresh = async () => {
+		setRefreshing(true);
+		try {
+			await reload();
+		} finally {
+			setRefreshing(false);
+		}
+	};
 	const [openFilter, setOpenFilter] = useState(null);
 	const [selectedHarvestMonth, setSelectedHarvestMonth] = useState(null);
 	const [selectedSowingMonth, setSelectedSowingMonth] = useState(null);
@@ -33,7 +48,17 @@ export default function CropScreen() {
 	const months = Object.values(Month);
 
 	return (
-		<ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
+		<ScrollView
+			style={[styles.container, { backgroundColor: theme.background }]}
+			refreshControl={
+				<RefreshControl
+					refreshing={refreshing}
+					onRefresh={onRefresh}
+					colors={[theme.primary]}
+					tintColor={theme.primary}
+				/>
+			}
+		>
 			<AppHeader />
 			<View style={styles.titleSection}>
 				<Text style={[styles.titleText, { color: theme.text }]}>Garden Crops</Text>

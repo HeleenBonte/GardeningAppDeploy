@@ -22,11 +22,11 @@ public record CreateCropRequest(
         @NotBlank(message = "plantingEnd is required")
         Month plantingEnd,
 
-        @NotBlank(message = "harvestingStart is required")
-        Month harvestingStart,
+        @NotBlank(message = "harvestStart is required")
+        Month harvestStart,
 
-        @NotBlank(message = "harvestingEnd is required")
-        Month harvestingEnd,
+        @NotBlank(message = "harvestEnd is required")
+        Month harvestEnd,
 
         @NotBlank(message = "inHouse is required")
         Boolean inHouse,
@@ -41,7 +41,7 @@ public record CreateCropRequest(
         Boolean inGreenhouse,
 
         @NotBlank(message = "Description is required")
-        String description,
+        String cropDescription,
 
         String cropTips,
 

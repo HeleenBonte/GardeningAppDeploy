@@ -1,6 +1,8 @@
 package be.vives.ti.backend.controller;
 
 
+import be.vives.ti.backend.dto.request.CreateCropRequest;
+import be.vives.ti.backend.dto.request.UpdateCropRequest;
 import be.vives.ti.backend.dto.response.CropResponse;
 import be.vives.ti.backend.service.CropService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,6 +11,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +20,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
+import java.net.URI;
 
 @RestController
 @RequestMapping("/api/crops")
@@ -76,6 +82,27 @@ public class CropController {
         return ResponseEntity.ok(crop);
     }
     //GET BY NAME
+    @GetMapping("/search")
+    @Operation(
+            summary = "Get crops by name",
+            description = """
+                    Retrieves a list of crops matching the provided name.
+                    """
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully retrieved list of crops"
+            )
+    })
+    public ResponseEntity<?> getByName(
+            @Parameter(description = "name", required = true)
+            @RequestParam String name,
+            @ParameterObject Pageable pageable){
+        log.debug("GET /api/crops/search?name={}", name);
+        var crops = cropService.findByNameContaining(name, pageable);
+        return ResponseEntity.ok(crops);
+    }
 
     //GET BY INHOUSE
 
@@ -86,10 +113,104 @@ public class CropController {
     //GET BY INPOTS
 
     //POST ADD NEW
+    @PostMapping
+    @Operation(
+            summary = "Add a new crop",
+            description = """
+                    Adds a new crop to the system.
+                    """
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Successfully added new crop"
+            )
+    })
+    public ResponseEntity<?> createCrop(@RequestBody CreateCropRequest request){
+        log.debug("POST /api/crops - {}", request);
+        CropResponse created = cropService.create(request);
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(created.id())
+                .toUri();
+        return ResponseEntity.created(location).body(created);
+    }
 
     //UPDATE BY ID (NEW TIPS/ NAME/...)
+    @PutMapping("/{id}")
+    @Operation(
+            summary = "Update an existing crop",
+            description = """
+                    Updates the details of an existing crop identified by its ID.
+                    """,
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully updated crop"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid request data"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - JWT token missing or invalid"
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - ADMIN role required"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Crop not found"
+            )
+    })
+    public ResponseEntity<CropResponse> updateCrop(
+            @Parameter(description = "ID of the crop to update", required = true)
+            @PathVariable int id,
+            @RequestBody UpdateCropRequest request){
+        log.debug("PUT /api/crops/{} - {}", id, request);
+        return cropService.update(id, request)
+                .map(updatedCrop -> ResponseEntity.ok().body(updatedCrop))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
 
     //DELETE BY ID
-
+    @DeleteMapping{"/{id}"}
+    @Operation(
+            summary = "Delete a crop",
+            description = """
+                    Deletes an existing crop identified by its ID.
+                    """,
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Successfully deleted crop"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - JWT token missing or invalid"
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - ADMIN role required"
+            )
+    })
+    public ResponseEntity<Void> deleteCrop(
+            @Parameter(description = "ID of the crop to delete", required = true)
+            @PathVariable int id) {
+        log.debug("DELETE /api/crops/{}", id);
+        boolean deleted = cropService.delete(id);
+        if (deleted) {
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
 
 }
