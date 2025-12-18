@@ -49,11 +49,13 @@ public class RecipeService {
     }
 
     public Page<RecipeResponse> findAll(Pageable pageable){
+        log.debug("Finding all recipes with pagination: {}", pageable);
         Page<Recipe> recipePage = recipeRepository.findAll(pageable);
         return recipePage.map(recipeMapper::toResponse);
     }
 
     public Page<RecipeResponse> findByCatId(int id, Pageable pageable){
+        log.debug("Finding recipes by category id: {} with pagination: {}", id, pageable);
         Page<Recipe> recipePage = recipeRepository.findByCategory_Id(id, pageable);
         return recipePage.map(recipeMapper::toResponse);
     }
@@ -151,7 +153,7 @@ public class RecipeService {
                 });
     }
 
-    public Boolean delete(int id){
+    public boolean delete(int id){
         log.debug("Deleting recipe with id: {}", id);
         if(!recipeRepository.existsById(id)){
             log.warn("Recipe with id: {} not found for deletion", id);

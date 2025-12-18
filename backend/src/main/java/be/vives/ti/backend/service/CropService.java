@@ -22,6 +22,7 @@ import java.util.Optional;
 @Transactional
 public class CropService {
     private static final Logger log = LoggerFactory.getLogger(CropService.class);
+
     private final CropRepository cropRepository;
     private final CropMapper cropMapper;
     public CropService(CropRepository cropRepository, CropMapper cropMapper){
@@ -30,26 +31,26 @@ public class CropService {
     }
 
     public Page<CropResponse> findAll(Pageable pageable){
+        log.debug("Finding all crops with pagination: {}", pageable);
         Page<Crop> cropPage = cropRepository.findAll(pageable);
         return cropPage.map(cropMapper::toResponse);
     }
 
     public CropResponse findById(int id){
+        log.debug("Finding crop with id: {}", id);
         Crop crop = cropRepository.findById(id).orElseThrow();
         return cropMapper.toResponse(crop);
     }
 
     public Page<CropResponse> findByNameContaining(String name, Pageable pageable){
+        log.debug("Finding crops with name containing: {} with pagination: {}", name, pageable);
         Page<Crop> cropPage = cropRepository.findByNameContainingIgnoreCase(name, pageable);
         return cropPage.map(cropMapper::toResponse);
     }
 
     public CropResponse create(CreateCropRequest request){
         log.debug("Checking if crop name is already used");
-        Optional<Crop> cropExists = cropRepository.findByNameContainingIgnoreCase(request.name(), Pageable.unpaged())
-                .stream()
-                .filter(crop -> crop.getName().equalsIgnoreCase(request.name()))
-                .findFirst();
+        Optional<Crop> cropExists = cropRepository.findByNameIgnoreCase(request.name());
         if(cropExists.isPresent()){
             throw new CropException("Crop name already in use");
         }
@@ -71,5 +72,14 @@ public class CropService {
 
     }
 
-    public
+    public boolean delete(int id){
+        log.debug("Deleting crop with id: {}", id);
+        if(!cropRepository.existsById(id)){
+            log.warn("Crop with id {} not found for deletion", id);
+            return false;
+        }
+        cropRepository.deleteById(id);
+        log.info("Crop with id {} deleted successfully", id);
+        return true;
+    }
 }

@@ -54,7 +54,7 @@ public class RecipeController {
                     content = @Content(schema = @Schema(implementation = Page.class))
             )
     })
-    public ResponseEntity<?> getAll(@ParameterObject Pageable pageable){
+    public ResponseEntity<Page<RecipeResponse>> getAll(@ParameterObject Pageable pageable){
         log.debug("GET /api/recipes");
         Page<RecipeResponse> recipes = recipeService.findAll(pageable);
         return ResponseEntity.ok(recipes);
@@ -83,7 +83,7 @@ public class RecipeController {
                     description = "Recipes not found"
             )
     })
-    public ResponseEntity<?> getByCatId(@Parameter(description = "Category ID", required = true) @PathVariable int catId,@ParameterObject Pageable pageable){
+    public ResponseEntity<Page<RecipeResponse>> getByCatId(@Parameter(description = "Category ID", required = true) @PathVariable int catId,@ParameterObject Pageable pageable){
         log.debug("GET /api/recipes/category/{}", catId);
         Page<RecipeResponse> recipes = recipeService.findByCatId(catId, pageable);
         return ResponseEntity.ok(recipes);
@@ -115,7 +115,7 @@ public class RecipeController {
                     description = "Recipes not found"
             )
     })
-    public ResponseEntity<?> getByCourseId(@Parameter(description = "Course ID", required = true) @PathVariable int courseId,@ParameterObject Pageable pageable){
+    public ResponseEntity<Page<RecipeResponse>> getByCourseId(@Parameter(description = "Course ID", required = true) @PathVariable int courseId,@ParameterObject Pageable pageable){
         log.debug("GET /api/recipes/course/{}", courseId);
         Page<RecipeResponse> recipes = recipeService.findByCatId(courseId, pageable);
         return ResponseEntity.ok(recipes);
@@ -144,7 +144,7 @@ public class RecipeController {
                     description = "Recipes not found"
             )
     })
-    public ResponseEntity<?> getByIngredientId(@Parameter(description = "Ingredient ID", required = true) @PathVariable int ingrId,@ParameterObject Pageable pageable){
+    public ResponseEntity<Page<RecipeResponse>> getByIngredientId(@Parameter(description = "Ingredient ID", required = true) @PathVariable int ingrId,@ParameterObject Pageable pageable){
         log.debug("GET /api/recipes/ingredient/{}", ingrId);
         Page<RecipeResponse> recipes = recipeService.findByCatId(ingrId, pageable);
         return ResponseEntity.ok(recipes);
@@ -245,11 +245,9 @@ public class RecipeController {
     public ResponseEntity<Void> deleteRecipe(
             @Parameter(description = "Recipe ID", required = true) @PathVariable int id) {
         log.debug("DELETE /api/recipes/{}", id);
-        boolean deleted = recipeService.delete(id);
-        if (deleted) {
-            return ResponseEntity.noContent().build();
-        } else {
+        if(!recipeService.delete(id)){
             return ResponseEntity.notFound().build();
         }
+        return ResponseEntity.noContent().build();
     }
 }

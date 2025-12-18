@@ -31,33 +31,32 @@ public class CropController {
     private static final Logger log = LoggerFactory.getLogger(CropController.class);
 
     private final CropService cropService;
-    public CropController(CropService cropService){
+
+    public CropController(CropService cropService) {
         this.cropService = cropService;
     }
-    //GET ALL
+
     @GetMapping
     @Operation(
-        summary = "Get all crops",
-        description = """
-                Retrieves a list of all crops. Supports pagination
-                   **Pagination parameters** (query params):
-                    - `page`: Page number (0-indexed, default:0)
-                    - `size`: Items per page (default:20)
-                    - `sort`: Sort field and direction
+            summary = "Get all crops",
+            description = """
+                    Retrieves a list of all crops. Supports pagination
+                       **Pagination parameters** (query params):
+                        - `page`: Page number (0-indexed, default:0)
+                        - `size`: Items per page (default:20)
+                        - `sort`: Sort field and direction
                     """
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of crops", content = @Content(schema = @Schema(implementation = Page.class))),
-        @ApiResponse(responseCode = "400", description = "Invalid pagination parameters supplied"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved list of crops", content = @Content(schema = @Schema(implementation = Page.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid pagination parameters supplied")
     })
-    public ResponseEntity<?> getAll(@ParameterObject Pageable pageable){
+    public ResponseEntity<?> getAll(@ParameterObject Pageable pageable) {
         log.debug("GET /api/crops");
         Page<CropResponse> crops = cropService.findAll(pageable);
         return ResponseEntity.ok(crops);
     }
 
-    //GET BY ID
     @GetMapping("/{id}")
     @Operation(
             summary = "Get a recipe by ID",
@@ -73,7 +72,7 @@ public class CropController {
     })
     public ResponseEntity<?> getById(
             @Parameter(description = "id", required = true)
-            @PathVariable int id){
+            @PathVariable int id) {
         log.debug("GET /api/crops/{}", id);
         var crop = cropService.findById(id);
         if (crop == null) {
@@ -81,7 +80,7 @@ public class CropController {
         }
         return ResponseEntity.ok(crop);
     }
-    //GET BY NAME
+
     @GetMapping("/search")
     @Operation(
             summary = "Get crops by name",
@@ -98,21 +97,12 @@ public class CropController {
     public ResponseEntity<?> getByName(
             @Parameter(description = "name", required = true)
             @RequestParam String name,
-            @ParameterObject Pageable pageable){
+            @ParameterObject Pageable pageable) {
         log.debug("GET /api/crops/search?name={}", name);
         var crops = cropService.findByNameContaining(name, pageable);
         return ResponseEntity.ok(crops);
     }
 
-    //GET BY INHOUSE
-
-    //GET BY INGARDEN
-
-    //GET BY INGREENHOUSE
-
-    //GET BY INPOTS
-
-    //POST ADD NEW
     @PostMapping
     @Operation(
             summary = "Add a new crop",
@@ -126,7 +116,7 @@ public class CropController {
                     description = "Successfully added new crop"
             )
     })
-    public ResponseEntity<?> createCrop(@RequestBody CreateCropRequest request){
+    public ResponseEntity<?> createCrop(@RequestBody CreateCropRequest request) {
         log.debug("POST /api/crops - {}", request);
         CropResponse created = cropService.create(request);
         URI location = ServletUriComponentsBuilder
@@ -137,7 +127,6 @@ public class CropController {
         return ResponseEntity.created(location).body(created);
     }
 
-    //UPDATE BY ID (NEW TIPS/ NAME/...)
     @PutMapping("/{id}")
     @Operation(
             summary = "Update an existing crop",
@@ -171,15 +160,14 @@ public class CropController {
     public ResponseEntity<CropResponse> updateCrop(
             @Parameter(description = "ID of the crop to update", required = true)
             @PathVariable int id,
-            @RequestBody UpdateCropRequest request){
+            @RequestBody UpdateCropRequest request) {
         log.debug("PUT /api/crops/{} - {}", id, request);
         return cropService.update(id, request)
                 .map(updatedCrop -> ResponseEntity.ok().body(updatedCrop))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    //DELETE BY ID
-    @DeleteMapping{"/{id}"}
+    @DeleteMapping("/{id}")
     @Operation(
             summary = "Delete a crop",
             description = """
@@ -205,8 +193,7 @@ public class CropController {
             @Parameter(description = "ID of the crop to delete", required = true)
             @PathVariable int id) {
         log.debug("DELETE /api/crops/{}", id);
-        boolean deleted = cropService.delete(id);
-        if (deleted) {
+        if(cropService.delete(id)){
             return ResponseEntity.noContent().build();
         } else {
             return ResponseEntity.notFound().build();

@@ -33,6 +33,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/recipes/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/crops/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/ingredients/**").permitAll()
 
                         .requestMatchers("/h2-console/**").permitAll()
 
@@ -44,6 +45,23 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/recipes/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/recipes/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/recipes/**").hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.POST, "/api/crops/**").hasRole( "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/crops/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/crops/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/crops/**").hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.POST, "/api/ingredients/**").hasRole( "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/ingredients/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/ingredients/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/ingredients/**").hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.GET, "/api/users/{id}").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/users/**").hasRole( "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/users/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/users/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasAnyRole("USER", "ADMIN")
 
                         // Customer endpoints - accessible by CUSTOMER and ADMIN
                         .requestMatchers("/api/customers/**").hasAnyRole("USER", "ADMIN")

@@ -20,7 +20,7 @@ import org.springframework.context.annotation.Configuration;
                         
                         **Authorization**:
                         - **Anonymous users**: Can view all crops and recipes (GET /api/crops, GET /api/recipes)
-                        - **CUSTOMER role**: Can add crops and recipes to their favorites, create new recipes and manage their profile
+                        - **USER role**: Can add crops and recipes to their favorites, create new recipes and manage their profile
                         - **ADMIN role**: Can manage crops an recipes (create, update, delete)
                         """
         ),

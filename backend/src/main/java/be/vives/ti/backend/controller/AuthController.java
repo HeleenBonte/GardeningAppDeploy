@@ -62,7 +62,7 @@ public class AuthController {
     })
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            //throw new PizzaStoreException("Email already exists");
+            throw new GardeningappException("Email already exists");
         }
 
         User user = new User();

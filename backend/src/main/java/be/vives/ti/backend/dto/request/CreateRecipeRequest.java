@@ -3,10 +3,12 @@ package be.vives.ti.backend.dto.request;
 import be.vives.ti.backend.model.IngredientMeasurement;
 import be.vives.ti.backend.model.RecipeStep;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Schema(description = "Request object for creating a new recipe")
@@ -37,7 +39,8 @@ public record CreateRecipeRequest(
             @NotNull(message = "Measurement id is required")
             Integer measurementId,
             @NotNull(message = "Quantity is required")
-            Double quantity
+            @DecimalMin(value = "0.0", inclusive = false, message = "Quantity must be greater than zero")
+            BigDecimal quantity
     ){
     }
     public record CreateRecipeStepRequest(

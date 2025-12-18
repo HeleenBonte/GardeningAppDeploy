@@ -1,7 +1,9 @@
 package be.vives.ti.backend.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.DecimalMin;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Schema(description = "Request object for updating a recipe")
@@ -19,7 +21,8 @@ public record UpdateRecipeRequest(
     public record UpdateQuantityRequest(
             Integer ingredientId,
             Integer measurementId,
-            Double quantity
+            @DecimalMin(value = "0.0", inclusive = false, message = "Quantity must be greater than zero")
+            BigDecimal quantity
     ){}
     public record UpdateRecipeStepRequest(
             Integer stepNumber,

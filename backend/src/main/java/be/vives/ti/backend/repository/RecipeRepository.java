@@ -14,9 +14,7 @@ import java.util.Optional;
 public interface RecipeRepository extends JpaRepository<Recipe, Integer> {
     Optional<Recipe> findByRecipeName(String recipeName);
     @Query("SELECT r FROM Recipe r JOIN FETCH r.quantities q JOIN FETCH q.ingredient i WHERE i.id = :ingredientID")
-    Page<Recipe> findByIngredientID(int ingredientID, Pageable pageable);
+    List<Recipe> findByIngredientID(int ingredientID);
     Page<Recipe> findByCategory_Id(int categoryId, Pageable pageable);
     Page<Recipe> findByCourse_Id(int courseId, Pageable pageable);
-
-
 }

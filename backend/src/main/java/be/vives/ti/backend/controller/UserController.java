@@ -1,42 +1,43 @@
 package be.vives.ti.backend.controller;
 
 
+import be.vives.ti.backend.dto.request.CreateUserRequest;
+import be.vives.ti.backend.dto.request.UpdateUserRequest;
+import be.vives.ti.backend.dto.response.CropResponse;
+import be.vives.ti.backend.dto.response.RecipeResponse;
 import be.vives.ti.backend.dto.response.UserResponse;
-import be.vives.ti.backend.service.CropService;
-import be.vives.ti.backend.service.RecipeService;
 import be.vives.ti.backend.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
+import java.net.URI;
+import java.util.List;
 
 @RestController
-@CrossOrigin(exposedHeaders = "*")
 @RequestMapping("/api/users")
+@Tag(name = "User Management", description = "APIs for managing users and their favorite crops and recipes")
+@SecurityRequirement(name = "bearerAuth")
 public class UserController {
     private static final Logger log = LoggerFactory.getLogger(UserController.class);
     private final UserService userService;
-    private final RecipeService recipeService;
-    private final CropService cropService;
-    public UserController(UserService userService, RecipeService recipeService, CropService cropService){
+    public UserController(UserService userService){
         this.userService = userService;
-        this.recipeService = recipeService;
-        this.cropService = cropService;
     }
-    //POST NEW USER
 
-    //GET ALL USERS
     @GetMapping
     @Operation(
             summary = "Get all users",
@@ -66,21 +67,279 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
-    //GET CURRENT USER (ID)
+    @GetMapping("/{id}")
+    @Operation(
+            summary = "Get user by ID",
+            description = "Retrieves a user by their unique ID. Requires USER or ADMIN role."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully retrieved user",
+                    content = @Content(schema = @Schema(implementation = UserResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - JWT token missing or invalid"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User not found"
+            )
+    })
+    public ResponseEntity<UserResponse> getUser(@Parameter(description = "User ID", required = true) @PathVariable int id){
+        log.debug("GET /api/users/{}", id);
+        UserResponse user = userService.findById(id);
+        return ResponseEntity.ok(user);
+    }
 
-    //GET FAVORITE CROPS
+    @PostMapping
+    @Operation(
+            summary = "Create new user",
+            description = "Creates a new user in the system. Requires ADMIN role."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "User created successfully",
+                    content = @Content(schema = @Schema(implementation = UserResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid user data"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - JWT token missing or invalid"
+            )
+    })
+    public ResponseEntity<UserResponse> createUser(@RequestBody CreateUserRequest request){
+        log.debug("POST /api/users - {}", request);
+        UserResponse createdUser = userService.create(request);
+
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(createdUser.id())
+                .toUri();
+        return ResponseEntity.created(location).body(createdUser);
+    }
+
+    @GetMapping("/{id}/favorite-crops")
+    @Operation(
+            summary = "Get favorite crops of a user",
+            description = "Retrieves the favorite crops of a user by their unique ID. Requires USER or ADMIN role."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully retrieved favorite crops"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - JWT token missing or invalid"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User not found"
+            )
+    })
+    public ResponseEntity<List<CropResponse>> getFavoriteCrops(@Parameter(description = "User ID", required = true) @PathVariable int id){
+        log.debug("GET /api/users/{}/favorite-crops", id);
+        var favoriteCrops = userService.findFavoriteCrops(id);
+        return ResponseEntity.ok(favoriteCrops);
+    }
 
     //POST ADD FAVORITE CROP
+    @PostMapping("/{userId}/favorite-crops/{cropId}")
+    @Operation(
+            summary = "Add favorite crop to user",
+            description = "Adds a crop to the user's list of favorite crops. Requires USER or ADMIN role."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully added favorite crop"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - JWT token missing or invalid"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User or Crop not found"
+            )
+    })
+    public ResponseEntity<Void> addFavoriteCrop(
+            @Parameter(description = "User ID", required = true) @PathVariable int userId,
+            @Parameter(description = "Crop ID", required = true) @PathVariable int cropId){
+        log.debug("POST /api/users/{}/favorite-crops/{}", userId, cropId);
+        userService.addFavoriteCrop(userId, cropId);
+        return ResponseEntity.ok().build();
+    }
 
-    //DELETE FAVORITE CROP
+    @DeleteMapping("/{userId}/favorite-crops/{cropId}")
+    @Operation(
+            summary = "Remove favorite crop from user",
+            description = "Removes a crop from the user's list of favorite crops. Requires USER or ADMIN role."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully removed favorite crop"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - JWT token missing or invalid"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User or Crop not found"
+            )
+    })
+    public ResponseEntity<Void> removeFavoriteCrop(
+            @Parameter(description = "User ID", required = true) @PathVariable int userId,
+            @Parameter(description = "Crop ID", required = true) @PathVariable int cropId){
+        log.debug("DELETE /api/users/{}/favorite-crops/{}", userId, cropId);
+        userService.removeFavoriteCrop(userId, cropId);
+        return ResponseEntity.noContent().build();
+    }
 
-    //GET FAVORITE RECIPES
+    @GetMapping("/{id}/favorite-recipes")
+    @Operation(
+            summary = "Get favorite recipes of a user",
+            description = "Retrieves the favorite recipes of a user by their unique ID. Requires USER or ADMIN role."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully retrieved favorite recipes"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - JWT token missing or invalid"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User not found"
+            )
+    })
+    public ResponseEntity<List<RecipeResponse>> getFavoriteRecipes(@Parameter(description = "User ID", required = true) @PathVariable int id){
+        log.debug("GET /api/users/{}/favorite-recipes", id);
+        var favoriteRecipes = userService.getFavoriteRecipes(id);
+        return ResponseEntity.ok(favoriteRecipes);
+    }
 
-    //POST ADD FAVORITE RECIPE
+    @PostMapping("/{userId}/favorite-recipes/{recipeId}")
+    @Operation(
+            summary = "Add favorite recipe to user",
+            description = "Adds a recipe to the user's list of favorite recipes. Requires USER or ADMIN role."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully added favorite recipe"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - JWT token missing or invalid"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User or Recipe not found"
+            )
+    })
+    public ResponseEntity<Void> addFavoriteRecipe(
+            @Parameter(description = "User ID", required = true) @PathVariable int userId,
+            @Parameter(description = "Recipe ID", required = true) @PathVariable int recipeId){
+        log.debug("POST /api/users/{}/favorite-recipes/{}", userId, recipeId);
+        userService.addFavoriteRecipe(userId, recipeId);
+        return ResponseEntity.ok().build();
+    }
 
-    //DELETE FAVORITE RECIPE
+    @DeleteMapping("/{userId}/favorite-recipes/{recipeId}")
+    @Operation(
+            summary = "Remove favorite recipe from user",
+            description = "Removes a recipe from the user's list of favorite recipes. Requires USER or ADMIN role."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully removed favorite recipe"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - JWT token missing or invalid"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User or Recipe not found"
+            )
+    })
+    public ResponseEntity<Void> removeFavoriteRecipe(
+            @Parameter(description = "User ID", required = true) @PathVariable int userId,
+            @Parameter(description = "Recipe ID", required = true) @PathVariable int recipeId){
+        log.debug("DELETE /api/users/{}/favorite-recipes/{}", userId, recipeId);
+        userService.removeFavoriteRecipe(userId, recipeId);
+        return ResponseEntity.noContent().build();
+    }
 
     //UPDATE CURRENT USER (ID)
+    @PutMapping("/{id}")
+    @Operation(
+            summary = "Update user by ID",
+            description = "Updates the details of an existing user by their unique ID. Requires USER or ADMIN role."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully updated user",
+                    content = @Content(schema = @Schema(implementation = UserResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid user data"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - JWT token missing or invalid"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User not found"
+            )
+    })
+    public ResponseEntity<UserResponse> updateUser(
+            @Parameter(description = "User ID", required = true) @PathVariable int id,
+            @RequestBody UpdateUserRequest request){
+        log.debug("PUT /api/users/{} - {}", id, request);
+        UserResponse updatedUser = userService.update(id, request);
+        return ResponseEntity.ok(updatedUser);
+    }
 
     //DELETE
+    @DeleteMapping("/{id}")
+    @Operation(
+            summary = "Delete user by ID",
+            description = "Deletes a user from the system by their unique ID. Requires ADMIN role."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Successfully deleted user"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - JWT token missing or invalid"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User not found"
+            )
+    })
+    public ResponseEntity<Void> deleteUser(@Parameter(description = "User ID", required = true) @PathVariable int id) {
+        log.debug("DELETE /api/users/{}", id);
+        userService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
 }

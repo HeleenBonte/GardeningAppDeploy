@@ -14,9 +14,6 @@ import java.util.List;
 public interface CropMapper {
     CropResponse toResponse(Crop crop);
 
-    List<CropResponse> toResponseList(List<Crop> crops);
-
-
     Crop toEntity(CreateCropRequest request);
 
     @Mapping(target = "id", ignore = true)

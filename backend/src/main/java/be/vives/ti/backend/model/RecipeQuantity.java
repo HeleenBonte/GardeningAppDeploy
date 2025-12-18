@@ -3,6 +3,8 @@ package be.vives.ti.backend.model;
 import jakarta.persistence.*;
 import jakarta.persistence.criteria.CriteriaBuilder;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "recipe_quantities")
 public class RecipeQuantity extends BaseEntity{
@@ -19,12 +21,12 @@ public class RecipeQuantity extends BaseEntity{
     private IngredientMeasurement measurement;
 
     @Column(name = "quantity")
-    private Double quantity;
+    private BigDecimal quantity;
 
     public RecipeQuantity() {
     }
 
-    public RecipeQuantity(Recipe recipe, Ingredient ingredient, IngredientMeasurement measurement, Double quantity) {
+    public RecipeQuantity(Recipe recipe, Ingredient ingredient, IngredientMeasurement measurement, BigDecimal quantity) {
         this.recipe = recipe;
         this.ingredient = ingredient;
         this.measurement = measurement;
@@ -43,11 +45,11 @@ public class RecipeQuantity extends BaseEntity{
         return measurement;
     }
 
-    public Double getQuantity() {
+    public BigDecimal getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(Double quantity) {
+    public void setQuantity(BigDecimal quantity) {
         this.quantity = quantity;
     }
 
