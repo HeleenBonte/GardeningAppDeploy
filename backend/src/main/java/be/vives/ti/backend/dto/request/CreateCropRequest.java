@@ -1,6 +1,7 @@
 package be.vives.ti.backend.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.time.Month;
@@ -28,16 +29,16 @@ public record CreateCropRequest(
         @NotBlank(message = "harvestingEnd is required")
         Month harvestingEnd,
 
-        @NotBlank(message = "inHouse is required")
+        @NotNull(message = "inHouse is required")
         Boolean inHouse,
 
-        @NotBlank(message = "inPots is required")
+        @NotNull(message = "inPots is required")
         Boolean inPots,
 
-        @NotBlank(message = "inGarden is required")
+        @NotNull(message = "inGarden is required")
         Boolean inGarden,
 
-        @NotBlank(message = "inGreenhouse is required")
+        @NotNull(message = "inGreenhouse is required")
         Boolean inGreenhouse,
 
         @NotBlank(message = "Description is required")

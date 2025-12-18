@@ -5,6 +5,7 @@ import be.vives.ti.backend.model.RecipeStep;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
 
@@ -21,9 +22,9 @@ public record CreateRecipeRequest(
         String cookTime,
         @NotBlank(message = "Image URL is required")
         String imageURL,
-        @NotBlank(message = "Course id is required")
+        @NotNull(message = "Course id is required")
         Integer courseId,
-        @NotBlank(message = "Category id is required")
+        @NotNull(message = "Category id is required")
         Integer categoryId,
         @NotEmpty(message = "Recipe must contain at least one ingredient")
         List<CreateQuantityRequest> quantities,
@@ -31,16 +32,16 @@ public record CreateRecipeRequest(
         List<CreateRecipeStepRequest> steps
 ) {
     public record CreateQuantityRequest(
-            @NotBlank(message = "Ingredient id is required")
+            @NotNull(message = "Ingredient id is required")
             Integer ingredientId,
-            @NotBlank(message = "Measurement id is required")
+            @NotNull(message = "Measurement id is required")
             Integer measurementId,
-            @NotBlank(message = "Quantity is required")
+            @NotNull(message = "Quantity is required")
             Double quantity
     ){
     }
     public record CreateRecipeStepRequest(
-            @NotBlank(message = "Step number is required")
+            @NotNull(message = "Step number is required")
             Integer stepNumber,
             @NotBlank(message = "Description is required")
             String description
