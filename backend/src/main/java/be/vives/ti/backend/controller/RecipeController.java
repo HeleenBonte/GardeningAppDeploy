@@ -221,4 +221,35 @@ public class RecipeController {
                 .orElse(ResponseEntity.notFound().build());
     }
     //DELETE
+    @DeleteMapping("/{id}")
+    @Operation(
+            summary = "Delete a recipe",
+            description = "Deletes an existing recipe. Requires ADMIN role.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Recipe deleted successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - JWT token missing or invalid"
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - ADMIN role required"
+            ),
+
+    })
+    public ResponseEntity<Void> deleteRecipe(
+            @Parameter(description = "Recipe ID", required = true) @PathVariable int id) {
+        log.debug("DELETE /api/recipes/{}", id);
+        boolean deleted = recipeService.delete(id);
+        if (deleted) {
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }
