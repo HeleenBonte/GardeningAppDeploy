@@ -15,12 +15,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -39,6 +41,7 @@ public class UserController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(
             summary = "Get all users",
             description = """
@@ -113,7 +116,7 @@ public class UserController {
                     description = "Unauthorized - JWT token missing or invalid"
             )
     })
-    public ResponseEntity<UserResponse> createUser(@RequestBody CreateUserRequest request){
+    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request){
         log.debug("POST /api/users - {}", request);
         UserResponse createdUser = userService.create(request);
 
@@ -173,7 +176,17 @@ public class UserController {
     public ResponseEntity<Void> addFavoriteCrop(
             @Parameter(description = "User ID", required = true) @PathVariable int userId,
             @Parameter(description = "Crop ID", required = true) @PathVariable int cropId){
-        log.debug("POST /api/users/{}/favorite-crops/{}", userId, cropId);
+                log.debug("POST /api/users/{}/favorite-crops/{}", userId, cropId);
+                try {
+                        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+                        if (auth == null) {
+                                log.debug("Authentication on addFavoriteCrop: null");
+                        } else {
+                                log.debug("Authentication on addFavoriteCrop: principal={} authorities={}", auth.getName(), auth.getAuthorities());
+                        }
+                } catch (Exception ex) {
+                        log.debug("Failed to read SecurityContext authentication: {}", ex.getMessage());
+                }
         userService.addFavoriteCrop(userId, cropId);
         return ResponseEntity.ok().build();
     }
@@ -311,7 +324,7 @@ public class UserController {
     })
     public ResponseEntity<UserResponse> updateUser(
             @Parameter(description = "User ID", required = true) @PathVariable int id,
-            @RequestBody UpdateUserRequest request){
+            @Valid @RequestBody UpdateUserRequest request){
         log.debug("PUT /api/users/{} - {}", id, request);
         UserResponse updatedUser = userService.update(id, request);
         return ResponseEntity.ok(updatedUser);

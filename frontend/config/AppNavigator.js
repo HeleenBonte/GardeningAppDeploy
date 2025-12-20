@@ -12,9 +12,15 @@ import CropDetailScreen from '../screens/CropDetailScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import RecipeScreen from '../screens/RecipeScreen';
+import RecipeDetailScreen from '../screens/RecipeDetailScreen';
+import FavoritesScreen from '../screens/FavoritesScreen';
+import AddRecipeScreen from '../screens/AddRecipeScreen';
+import { getJwtToken } from '../auth/storage';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+const CropsStack = createNativeStackNavigator();
+const RecipesStack = createNativeStackNavigator();
 
 function MainTabs() {
   const { theme } = useTheme();
@@ -54,20 +60,56 @@ function MainTabs() {
       />
       <Tab.Screen 
         name="Crops" 
-        component={CropScreen} 
+        component={CropsStackScreen} 
         options={{ tabBarLabel: 'Crops' }}
       />
       <Tab.Screen 
         name="Recipes" 
-        component={RecipeScreen} 
+        component={RecipesStackScreen} 
         options={{ tabBarLabel: 'Recipes' }}
       />
       <Tab.Screen 
         name="Favorites" 
-        component={HomeScreen} 
+        component={FavoritesScreen} 
         options={{ tabBarLabel: 'Favorites' }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            (async () => {
+              try {
+                const token = await getJwtToken();
+                if (!token) {
+                  e.preventDefault();
+                  navigation.navigate('Login');
+                }
+                // if token exists, allow default tab behavior (navigate to Favorites tab)
+              } catch (err) {
+                e.preventDefault();
+                navigation.navigate('Login');
+              }
+            })();
+          }
+        })}
       />
     </Tab.Navigator>
+  );
+}
+
+function CropsStackScreen() {
+  return (
+    <CropsStack.Navigator screenOptions={{ headerShown: false }}>
+      <CropsStack.Screen name="CropsList" component={CropScreen} />
+      <CropsStack.Screen name="CropDetail" component={CropDetailScreen} />
+    </CropsStack.Navigator>
+  );
+}
+
+function RecipesStackScreen() {
+  return (
+    <RecipesStack.Navigator screenOptions={{ headerShown: false }}>
+      <RecipesStack.Screen name="RecipesList" component={RecipeScreen} />
+      <RecipesStack.Screen name="AddRecipe" component={AddRecipeScreen} />
+      <RecipesStack.Screen name="RecipeDetail" component={RecipeDetailScreen} />
+    </RecipesStack.Navigator>
   );
 }
 
@@ -79,8 +121,7 @@ export default function AppNavigator() {
           headerShown: false,
         }}
       >
-        <Stack.Screen name="Main" component={MainTabs} />
-        <Stack.Screen name="CropDetail" component={CropDetailScreen} />
+          <Stack.Screen name="Main" component={MainTabs} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen 

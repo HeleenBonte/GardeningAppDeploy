@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
@@ -66,7 +67,7 @@ public class IngredientController {
                     description = "Invalid input data"
             )
     })
-    public ResponseEntity<IngredientResponse> create(@RequestBody CreateIngredientRequest request){
+    public ResponseEntity<IngredientResponse> create(@Valid @RequestBody CreateIngredientRequest request){
         log.debug("POST /api/ingredients - {}", request);
         IngredientResponse createdIngredient = ingredientService.create(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()

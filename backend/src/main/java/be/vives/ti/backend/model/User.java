@@ -22,18 +22,19 @@ public class User extends BaseEntity{
     @Column(nullable = false, length = 20)
     private Role role = Role.USER;
 
-    @ManyToMany
-    @JoinTable(name = "user_crops", joinColumns = @JoinColumn(name = "cropID"),
-            inverseJoinColumns = @JoinColumn(name = "userID"))
-    private Set<Crop> favoriteCrops;
+        @ManyToMany
+        @JoinTable(name = "user_crops",
+            joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "crop_id", referencedColumnName = "id"))
+        private Set<Crop> favoriteCrops;
 
-    @ManyToMany
-    @JoinTable(name = "user_recipes", joinColumns = @JoinColumn(name = "recipeID"),
-            inverseJoinColumns = @JoinColumn(name = "userID"))
-    private Set<Recipe> favoriteRecipes;
+        @ManyToMany
+        @JoinTable(name = "user_recipes",
+            joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "recipe_id", referencedColumnName = "id"))
+        private Set<Recipe> favoriteRecipes;
 
-    @OneToMany
-    @JoinColumn(name = "own_recipe")
+    @OneToMany(mappedBy = "author")
     private Set<Recipe> ownRecipes;
 
     public User(){

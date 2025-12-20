@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Image, StyleSheet, TouchableOpacity, TextInput, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
+import { getItem } from '../auth/storage';
+import { getUserFavoriteCrops, addFavoriteCrop, removeFavoriteCrop } from '../config/api';
 import { useTheme } from '../themes/ThemeContext';
 import AppHeader from '../components/AppHeader';
 
@@ -18,6 +20,25 @@ export default function CropScreen() {
 	useEffect(() => {
 		if (isFocused) reload();
 	}, [isFocused, reload]);
+
+	const [favoritesIds, setFavoritesIds] = useState(new Set());
+	const [favLoadingIds, setFavLoadingIds] = useState(new Set());
+
+	useEffect(() => {
+		let mounted = true;
+		(async () => {
+			try {
+				const userId = await getItem('user_id');
+				if (!userId) return;
+				const res = await getUserFavoriteCrops(userId);
+				const ids = Array.isArray(res) ? res.map(r => r.id) : (res?.map ? res.map(r => r.id) : []);
+				if (mounted) setFavoritesIds(new Set(ids));
+			} catch (err) {
+				console.warn('Failed to load favorite crops', err);
+			}
+		})();
+		return () => { mounted = false; };
+	}, [isFocused]);
 
 	const [refreshing, setRefreshing] = useState(false);
 	const onRefresh = async () => {
@@ -165,30 +186,66 @@ export default function CropScreen() {
 			)}
 
 			{crops
-  				.filter(crop => filterCrop(crop, {
-    				search,
-    				selectedSowingMonth,
-    				selectedHarvestMonth,
-    				selectedLocations
-  				}))
-				.map((crop) => (
-					<View key={crop.id} style={[styles.card, { borderColor: theme.cardBorder, backgroundColor: theme.cardBackground }]}>
-						<Image source={{ uri: crop.image }} style={styles.image} />
-						<View style={styles.cardContent}>
-							<Text style={[styles.cardTitle, { color: theme.text }]}>{crop.name || crop.title}</Text>
-							<Text style={[styles.cardSubtitle, { color: theme.secondaryText }]}>{crop.subtitle || crop.cropDescription}</Text>
+				.filter(crop => filterCrop(crop, {
+					search,
+					selectedSowingMonth,
+					selectedHarvestMonth,
+					selectedLocations
+				}))
+				.map((crop) => {
+					const isFav = favoritesIds.has(crop.id);
+					return (
+						<View key={crop.id} style={[styles.card, { borderColor: theme.cardBorder, backgroundColor: theme.cardBackground }]}>
+							<Image source={{ uri: crop.image }} style={styles.image} />
+							<View style={styles.cardContent}>
+								<Text style={[styles.cardTitle, { color: theme.text }]}>{crop.name || crop.title}</Text>
+								<Text style={[styles.cardSubtitle, { color: theme.secondaryText }]}>{crop.subtitle || crop.cropDescription}</Text>
+								<TouchableOpacity
+									style={[styles.button, { backgroundColor: theme.primary }]}
+									onPress={() => {
+										const relatedRecipes = recipes.filter(r => String(r.cropId) === String(crop.id));
+										navigation.navigate('CropDetail', { crop, relatedRecipes });
+									}}
+								>
+									<Text style={styles.buttonText}>View Details</Text>
+								</TouchableOpacity>
+							</View>
 							<TouchableOpacity
-								style={[styles.button, { backgroundColor: theme.primary }]}
-								onPress={() => {
-									const relatedRecipes = recipes.filter(r => String(r.cropId) === String(crop.id));
-									navigation.navigate('CropDetail', { crop, relatedRecipes });
+								style={[styles.heartButton, { backgroundColor: '#2b2b2b' }]}
+									onPress={async () => {
+									const userId = await getItem('user_id');
+									if (!userId) return;
+									const cropId = crop.id;
+									setFavLoadingIds(prev => new Set(prev).add(cropId));
+									try {
+										if (isFav) {
+											await removeFavoriteCrop(userId, cropId);
+											setFavoritesIds(prev => {
+												const copy = new Set(prev);
+												copy.delete(cropId);
+												return copy;
+											});
+										} else {
+											await addFavoriteCrop(userId, cropId);
+											setFavoritesIds(prev => new Set(prev).add(cropId));
+										}
+									} catch (err) {
+										console.warn('Failed to toggle favorite crop', err);
+									} finally {
+										setFavLoadingIds(prev => {
+											const copy = new Set(prev);
+											copy.delete(cropId);
+											return copy;
+										});
+									}
 								}}
+								disabled={favLoadingIds.has(crop.id)}
 							>
-								<Text style={styles.buttonText}>View Details</Text>
+								<Ionicons name={isFav ? 'heart' : 'heart-outline'} size={20} color={isFav ? '#ff6b35' : theme.secondaryText} />
 							</TouchableOpacity>
 						</View>
-					</View>
-				))}
+					);
+				})}
 
 		</ScrollView>
 	);
@@ -281,6 +338,7 @@ const styles = StyleSheet.create({
 		overflow: 'hidden',
 		borderWidth: 1,
 	},
+	heartButton: { position: 'absolute', top: 12, right: 12, width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 4, elevation: 2 },
 	image: {
 		width: '100%',
 		height: 180,

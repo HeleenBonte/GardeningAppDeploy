@@ -11,6 +11,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../themes/ThemeContext';
 import AppHeader from '../components/AppHeader';
+import DebugMeButton from '../components/DebugMeButton';
+
 
 export default function SettingsScreen({ navigation }) {
   const { theme, isDarkMode, toggleTheme, currentSeason, seasonOverride, setSeasonOverride } = useTheme();
@@ -262,6 +264,7 @@ export default function SettingsScreen({ navigation }) {
           </View>
         </View>
       </View>
+            <DebugMeButton />
 
       {/* About Section */}
       <View style={[styles.section, styles.lastSection, { backgroundColor: theme.cardBg, borderWidth: 1, borderColor: theme.cardBorder, borderRadius: 12, margin: 12, padding: 16 }]}> 

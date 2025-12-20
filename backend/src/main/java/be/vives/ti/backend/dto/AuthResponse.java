@@ -1,6 +1,7 @@
 package be.vives.ti.backend.dto;
 public class AuthResponse {
 
+    private Integer id;
     private String token;
     private String email;
     private String name;
@@ -10,6 +11,14 @@ public class AuthResponse {
     }
 
     public AuthResponse(String token, String email, String name, String role) {
+        this.token = token;
+        this.email = email;
+        this.name = name;
+        this.role = role;
+    }
+
+    public AuthResponse(Integer id, String token, String email, String name, String role) {
+        this.id = id;
         this.token = token;
         this.email = email;
         this.name = name;
@@ -46,5 +55,13 @@ public class AuthResponse {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 }

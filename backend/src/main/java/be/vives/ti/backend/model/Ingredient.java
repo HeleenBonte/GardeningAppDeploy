@@ -24,8 +24,7 @@ public class Ingredient extends BaseEntity{
 //            inverseJoinColumns = @JoinColumn(name = "ingredientID"))
 //    private Set<Recipe> recipes;
 
-    @OneToMany
-    @JoinColumn(name = "recipeQuantityID")
+    @OneToMany(mappedBy = "ingredient")
     private Set<RecipeQuantity> quantities;
 
     public Ingredient() {

@@ -16,5 +16,9 @@ RUN addgroup --system app && adduser --system --ingroup app appuser \
     && chown -R appuser:app /app
 USER appuser
 
+# Provide production profile via environment variable inside the container
+ENV SPRING_PROFILES_ACTIVE=prod
+
 EXPOSE 8080
-ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-jar", "app.jar"]
+# Let Spring read the profile from the environment variable. IDEs and local runs should set SPRING_PROFILES_ACTIVE=dev (or use -Dspring.profiles.active=dev)
+ENTRYPOINT ["java", "-jar", "app.jar"]

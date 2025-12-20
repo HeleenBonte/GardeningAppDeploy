@@ -108,7 +108,7 @@ CREATE TABLE recipe_quantities (
   recipe_id integer,
   ingredient_id integer,
   measurement_id integer,
-  quantity double precision,
+  quantity numeric(38,2),
   CONSTRAINT fk_rq_recipe FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE,
   CONSTRAINT fk_rq_ingredient FOREIGN KEY (ingredient_id) REFERENCES ingredients(id) ON DELETE CASCADE,
   CONSTRAINT fk_rq_measurement FOREIGN KEY (measurement_id) REFERENCES ingredient_measurements(id) ON DELETE SET NULL

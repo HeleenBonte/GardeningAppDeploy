@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../themes/ThemeContext';
-import { saveJwtToken } from '../auth/storage';
+import { saveJwtToken, saveItem } from '../auth/storage';
+import { register } from '../config/api';
 
 export default function RegisterScreen() {
   const { theme, currentSeason } = useTheme();
@@ -13,6 +14,9 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const seasonEmojis = {
     Fall: '🍂',
@@ -24,16 +28,48 @@ export default function RegisterScreen() {
   async function handleRegister() {
     if (!email || !password) return;
     if (password !== confirmPassword) {
-      // small client-side validation; in a real app show an error
+      // small client-side validation; show an error
+      setError('Passwords do not match');
       return;
     }
+    setError('');
     setLoading(true);
     try {
-      // Replace this with real registration API call
-      await saveJwtToken('demo-jwt-token');
-      navigation.navigate('Main');
+      const normalizedEmail = email?.trim().toLowerCase();
+      const res = await register(name, normalizedEmail, password);
+      if (res?.token) {
+        await saveJwtToken(res.token);
+        if (res.id) await saveItem('user_id', String(res.id));
+        navigation.navigate('Main');
+      } else {
+        console.warn('Register did not return a token', res);
+        const msg = (res && (res.message || res.error)) || 'Registration failed';
+        setError(msg);
+      }
     } catch (e) {
       console.warn('Register failed', e);
+      const buildMsg = (err) => {
+        if (!err) return 'Registration failed';
+        const m = err.message;
+        if (m && m !== 'Error') return m;
+        const raw = err.raw ?? err.cause ?? null;
+        try {
+          if (raw) {
+            const obj = typeof raw === 'string' ? JSON.parse(raw) : raw;
+            if (obj) {
+              if (obj.message) return obj.message;
+              if (obj.error) return obj.error;
+              if (Array.isArray(obj.validationErrors)) return obj.validationErrors.map(v => v.message || v.defaultMessage || JSON.stringify(v)).join('; ');
+              return JSON.stringify(obj);
+            }
+          }
+        } catch (_) {}
+        // Registration-specific friendly mapping
+        if (err.status === 409) return 'Email already exists';
+        if (err.status) return `Error ${err.status}${err.statusText ? `: ${err.statusText}` : ''}`;
+        return String(err) || 'Registration failed';
+      };
+      setError(buildMsg(e));
     } finally {
       setLoading(false);
     }
@@ -64,31 +100,45 @@ export default function RegisterScreen() {
               placeholder="Enter your email"
               placeholderTextColor={theme.secondaryText}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(t) => setEmail(t?.trim().toLowerCase())}
               keyboardType="email-address"
               autoCapitalize="none"
               style={[styles.input, { backgroundColor: theme.imagePlaceholderBg, color: theme.text, borderColor: theme.cardBorder }]}
             />
 
             <Text style={[styles.label, { color: theme.secondaryText }]}>Password</Text>
-            <TextInput
-              placeholder="Choose a password"
-              placeholderTextColor={theme.secondaryText}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              style={[styles.input, { backgroundColor: theme.imagePlaceholderBg, color: theme.text, borderColor: theme.cardBorder }]}
-            />
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <TextInput
+                placeholder="Choose a password"
+                placeholderTextColor={theme.secondaryText}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                autoCorrect={false}
+                style={[styles.input, { backgroundColor: theme.imagePlaceholderBg, color: theme.text, borderColor: theme.cardBorder, flex: 1 }]}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(s => !s)} style={{ marginLeft: 8, padding: 8 }} accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}>
+                <Text style={{ color: theme.primary, fontWeight: '700' }}>{showPassword ? 'Hide' : 'Show'}</Text>
+              </TouchableOpacity>
+            </View>
 
             <Text style={[styles.label, { color: theme.secondaryText }]}>Confirm Password</Text>
-            <TextInput
-              placeholder="Repeat your password"
-              placeholderTextColor={theme.secondaryText}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-              style={[styles.input, { backgroundColor: theme.imagePlaceholderBg, color: theme.text, borderColor: theme.cardBorder }]}
-            />
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <TextInput
+                placeholder="Repeat your password"
+                placeholderTextColor={theme.secondaryText}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry={!showConfirmPassword}
+                autoCapitalize="none"
+                autoCorrect={false}
+                style={[styles.input, { backgroundColor: theme.imagePlaceholderBg, color: theme.text, borderColor: theme.cardBorder, flex: 1 }]}
+              />
+              <TouchableOpacity onPress={() => setShowConfirmPassword(s => !s)} style={{ marginLeft: 8, padding: 8 }} accessibilityLabel={showConfirmPassword ? 'Hide password' : 'Show password'}>
+                <Text style={{ color: theme.primary, fontWeight: '700' }}>{showConfirmPassword ? 'Hide' : 'Show'}</Text>
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity
               style={[styles.signInButton, { backgroundColor: theme.primary, opacity: loading ? 0.7 : 1 }]}
@@ -96,6 +146,14 @@ export default function RegisterScreen() {
               disabled={loading || !email || !password}
             >
               <Text style={styles.signInText}>{loading ? 'Creating…' : 'Create Account'}</Text>
+            </TouchableOpacity>
+            {error ? <Text style={[styles.errorText, { color: '#e74c3c' }]}>{error}</Text> : null}
+
+            <TouchableOpacity
+              style={[styles.signInButton, { backgroundColor: theme.primary, marginTop: 8 }]}
+              onPress={() => navigation.navigate('Main')}
+            >
+              <Text style={styles.signInText}>Continue as guest</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.signUpButton} onPress={() => navigation.navigate('Login')}>
@@ -123,4 +181,5 @@ const styles = StyleSheet.create({
   signInText: { color: '#fff', fontWeight: '700' },
   signUpButton: { marginTop: 10, alignItems: 'center' },
   signUpText: { fontWeight: '700' },
+  errorText: { marginTop: 8, textAlign: 'center' },
 });

@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
@@ -59,6 +60,13 @@ public class RecipeController {
         Page<RecipeResponse> recipes = recipeService.findAll(pageable);
         return ResponseEntity.ok(recipes);
     }
+
+        @GetMapping("/{id}")
+        @Operation(summary = "Get recipe by id")
+        public ResponseEntity<RecipeResponse> getById(@Parameter(description = "Recipe ID", required = true) @PathVariable int id){
+                log.debug("GET /api/recipes/{}", id);
+                return recipeService.findById(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+        }
     //GET BY CAT ID
     @GetMapping("/category/{catId}")
     @Operation(
@@ -169,7 +177,7 @@ public class RecipeController {
                     description = "Unauthorized - JWT token missing or invalid"
             )
     })
-    public ResponseEntity<RecipeResponse> createRecipe(@RequestBody CreateRecipeRequest request){
+    public ResponseEntity<RecipeResponse> createRecipe(@Valid @RequestBody CreateRecipeRequest request){
         log.debug("POST /api/recipes - {}", request);
 
         RecipeResponse created = recipeService.create(request);
@@ -214,7 +222,7 @@ public class RecipeController {
     })
     public ResponseEntity<RecipeResponse> updateRecipe(
             @Parameter(description = "Recipe ID", required = true) @PathVariable int id,
-            @RequestBody UpdateRecipeRequest request){
+            @Valid @RequestBody UpdateRecipeRequest request){
         log.debug("PUT /api/recipes/{} - {}", id, request);
         return recipeService.update(id, request)
                 .map(ResponseEntity::ok)

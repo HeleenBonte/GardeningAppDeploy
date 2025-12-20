@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../themes/ThemeContext';
-import { saveJwtToken } from '../auth/storage';
+import { saveJwtToken, saveItem } from '../auth/storage';
+import { login } from '../config/api';
 
 export default function LoginScreen() {
   const { theme, currentSeason } = useTheme();
@@ -10,6 +11,8 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const seasonEmojis = {
     Fall: '🍂',
@@ -20,14 +23,54 @@ export default function LoginScreen() {
 
   async function handleSignIn() {
     if (!email) return;
+    setError('');
     setLoading(true);
     try {
-      // In a real app you'd call your API to authenticate and receive a JWT
-      // Here we persist a demo token to enable the rest of the UI flows
-      await saveJwtToken('demo-jwt-token');
-      navigation.navigate('Main');
+      const normalizedEmail = email?.trim().toLowerCase();
+      const res = await login(normalizedEmail, password);
+      if (res?.token) {
+        await saveJwtToken(res.token);
+        if (res.id) await saveItem('user_id', String(res.id));
+        navigation.navigate('Main');
+      } else {
+        const msg = (res && (res.message || res.error)) || 'Login failed';
+        console.warn('Login did not return a token', res);
+        setError(msg);
+      }
     } catch (e) {
       console.warn('Sign in failed', e);
+      const buildMsg = (err) => {
+        if (!err) return 'Sign in failed';
+        // Auth-specific friendly mapping — prioritize HTTP status for auth flows
+        if (err.status === 401 || err.status === 403) return 'Invalid email or password';
+
+        // prefer explicit message if it's not generic
+        const m = err.message;
+        if (m && m !== 'Error') return m;
+
+        // check structured payload
+        const raw = err.raw ?? err.cause ?? null;
+        try {
+          if (raw) {
+            const obj = typeof raw === 'string' ? JSON.parse(raw) : raw;
+            if (obj) {
+              if (obj.message) return obj.message;
+              if (obj.error) return obj.error;
+              if (Array.isArray(obj.validationErrors)) return obj.validationErrors.map(v => v.message || v.defaultMessage || JSON.stringify(v)).join('; ');
+              return JSON.stringify(obj);
+            }
+          }
+        } catch (_) {
+          // ignore parse errors
+        }
+
+        // fallback to status + statusText
+        if (err.status) return `Error ${err.status}${err.statusText ? `: ${err.statusText}` : ''}`;
+        // last resort
+        return String(err) || 'Sign in failed';
+      };
+
+      setError(buildMsg(e));
     } finally {
       setLoading(false);
     }
@@ -49,21 +92,28 @@ export default function LoginScreen() {
               placeholder="Enter your email"
               placeholderTextColor={theme.secondaryText}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(t) => setEmail(t?.trim().toLowerCase())}
               keyboardType="email-address"
+              autoCapitalize="none"
               style={[styles.input, { backgroundColor: theme.imagePlaceholderBg, color: theme.text, borderColor: theme.cardBorder }]}
             />
 
             <Text style={[styles.label, { color: theme.secondaryText }]}>Password</Text>
-            <TextInput
-              placeholder="Enter your password"
-              placeholderTextColor={theme.secondaryText}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              style={[styles.input, { backgroundColor: theme.imagePlaceholderBg, color: theme.text, borderColor: theme.cardBorder }]}
-            />
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <TextInput
+                placeholder="Enter your password"
+                placeholderTextColor={theme.secondaryText}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                autoCorrect={false}
+                style={[styles.input, { backgroundColor: theme.imagePlaceholderBg, color: theme.text, borderColor: theme.cardBorder, flex: 1 }]}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(s => !s)} style={{ marginLeft: 8, padding: 8 }} accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}>
+                <Text style={{ color: theme.primary, fontWeight: '700' }}>{showPassword ? 'Hide' : 'Show'}</Text>
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity
               style={[styles.signInButton, { backgroundColor: theme.primary, opacity: loading ? 0.7 : 1 }]}
@@ -71,6 +121,13 @@ export default function LoginScreen() {
               disabled={loading || !email}
             >
               <Text style={styles.signInText}>{loading ? 'Signing In…' : 'Sign In'}</Text>
+            </TouchableOpacity>
+            {error ? <Text style={[styles.errorText, { color: '#e74c3c' }]}>{error}</Text> : null}
+            <TouchableOpacity
+              style={[styles.signInButton, { backgroundColor: theme.primary, marginTop: 8 }]}
+              onPress={() => navigation.navigate('Main')}
+            >
+              <Text style={styles.signInText}>Continue as guest</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.signUpButton]}
@@ -100,4 +157,5 @@ const styles = StyleSheet.create({
   signInText: { color: '#fff', fontWeight: '700' },
   signUpButton: { marginTop: 10, alignItems: 'center' },
   signUpText: { fontWeight: '700' },
+  errorText: { marginTop: 8, textAlign: 'center' },
 });

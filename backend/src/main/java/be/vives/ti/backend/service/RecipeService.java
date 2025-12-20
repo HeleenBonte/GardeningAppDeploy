@@ -163,4 +163,9 @@ public class RecipeService {
         log.info("Deleted recipe with id: {}", id);
         return true;
     }
+
+    public Optional<RecipeResponse> findById(int id) {
+        log.debug("Finding recipe by id: {}", id);
+        return recipeRepository.findById(id).map(recipeMapper::toResponse);
+    }
 }

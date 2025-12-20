@@ -76,6 +76,7 @@ public class AuthController {
         String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
 
         AuthResponse response = new AuthResponse(
+                user.getId(),
                 token,
                 user.getEmail(),
                 user.getUserName(),
@@ -110,6 +111,7 @@ public class AuthController {
             String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
 
             AuthResponse response = new AuthResponse(
+                    user.getId(),
                     token,
                     user.getEmail(),
                     user.getUserName(),

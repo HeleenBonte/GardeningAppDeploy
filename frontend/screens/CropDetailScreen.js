@@ -4,6 +4,8 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme } from '../themes/ThemeContext';
 import AppHeader from '../components/AppHeader';
 import useCropDetail from '../hooks/useCropDetail';
+import { addFavoriteCrop } from '../config/api';
+import { getItem } from '../auth/storage';
 import MONTHS, { isInRange } from '../lib/months';
 
 export default function CropDetailScreen() {
@@ -25,7 +27,29 @@ export default function CropDetailScreen() {
 
   function handleViewRecipe(id) {
     if (route.params?.onViewRecipe) route.params.onViewRecipe(id);
-    else navigation.navigate('Recipe', { recipeId: id });
+    else navigation.navigate('Recipes', { screen: 'RecipeDetail', params: { id } });
+  }
+
+  const [favLoading, setFavLoading] = React.useState(false);
+  const [favSaved, setFavSaved] = React.useState(false);
+
+  async function handleSaveFavorite() {
+    if (!crop?.id) return;
+    setFavLoading(true);
+    try {
+      // debug: check jwt presence
+      const dbgToken = await getItem('jwt_token');
+      if (__DEV__) console.log('[CropDetail] jwt present?', !!dbgToken, 'userId stored?', await getItem('user_id'));
+      const userId = await getItem('user_id');
+      if (!userId) return;
+      await addFavoriteCrop(userId, crop.id);
+      setFavSaved(true);
+    } catch (err) {
+      console.warn('Failed to add favorite crop', err);
+      // optional: show inline error or toast; keep simple for now
+    } finally {
+      setFavLoading(false);
+    }
   }
 
   if (loading) return (
@@ -75,6 +99,15 @@ export default function CropDetailScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Text style={[styles.title, { color: theme.text }]}>{crop.name}</Text>
 
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <TouchableOpacity
+                style={[styles.favButton, { backgroundColor: favSaved ? theme.primary : theme.primary }]}
+                onPress={handleSaveFavorite}
+                disabled={favLoading || favSaved}
+              >
+                <Text style={styles.favButtonText}>{favSaved ? 'Saved' : favLoading ? 'Saving…' : 'Save'}</Text>
+              </TouchableOpacity>
             </View>
           </View>
         <View style={styles.infoCol}>
@@ -221,4 +254,6 @@ const styles = StyleSheet.create({
 		fontWeight: '600', },
   textLight: { color: '#e6eef6' },
   textMutedLight: { color: '#aab6c2' },
+  favButton: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, marginLeft: 10 },
+  favButtonText: { color: '#fff', fontWeight: '700' },
 });

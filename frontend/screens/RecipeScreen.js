@@ -14,6 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import AppHeader from '../components/AppHeader';
 import { useTheme } from '../themes/ThemeContext';
 import useRecipes from '../hooks/useRecipes';
+import { getItem } from '../auth/storage';
+import { getUserFavoriteRecipes, addFavoriteRecipe, removeFavoriteRecipe } from '../config/api';
 import { useIsFocused } from '@react-navigation/native';
 import { filterRecipe } from '../lib/recipeFilters';
 
@@ -26,16 +28,16 @@ const cropFilters = [
   { key: 'lettuce', label: 'Lettuce' },
 ];
 
-function RecipeCard({ recipe, theme }) {
-  const [liked, setLiked] = useState(false);
+function RecipeCard({ recipe, theme, navigation, liked, onToggleFavorite, favLoading }) {
   return (
     <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
       <View style={styles.cardImageWrapper}>
         <Image source={{ uri: recipe.imageURL || recipe.image || FALLBACK_IMAGE }} style={styles.cardImage} />
         <TouchableOpacity
           style={[styles.heartButton, { backgroundColor: theme.cardBg }]}
-          onPress={() => setLiked((p) => !p)}
+          onPress={() => onToggleFavorite(recipe.id)}
           accessibilityLabel={liked ? 'Remove from favorites' : 'Save to favorites'}
+          disabled={favLoading}
         >
           <Ionicons name={liked ? 'heart' : 'heart-outline'} size={18} color={liked ? theme.primary : theme.secondaryText} />
         </TouchableOpacity>
@@ -56,7 +58,7 @@ function RecipeCard({ recipe, theme }) {
           </View>
         </View>
 
-        <TouchableOpacity style={[styles.primaryButton, { backgroundColor: theme.primary }]} onPress={() => {}} accessibilityLabel="View recipe details">
+        <TouchableOpacity style={[styles.primaryButton, { backgroundColor: theme.primary }]} onPress={() => navigation?.navigate('RecipeDetail', { id: recipe.id })} accessibilityLabel="View recipe details">
           <Text style={styles.primaryButtonText}>View Recipe</Text>
         </TouchableOpacity>
       </View>
@@ -64,10 +66,57 @@ function RecipeCard({ recipe, theme }) {
   );
 }
 
-export default function RecipeScreen() {
+export default function RecipeScreen({ navigation }) {
   const { theme } = useTheme();
   const { recipes, loading, error, reload } = useRecipes();
   const isFocused = useIsFocused();
+
+  const [favoritesIds, setFavoritesIds] = useState(new Set());
+  const [favLoadingIds, setFavLoadingIds] = useState(new Set());
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const userId = await getItem('user_id');
+        if (!userId) return;
+        const res = await getUserFavoriteRecipes(userId);
+        const ids = Array.isArray(res) ? res.map(r => r.id) : (res?.map ? res.map(r => r.id) : []);
+        if (mounted) setFavoritesIds(new Set(ids));
+      } catch (err) {
+        console.warn('Failed to load favorite recipes', err);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [isFocused]);
+
+  async function onToggleFavorite(recipeId) {
+    const userId = await getItem('user_id');
+    if (!userId) return;
+    // set loading
+    setFavLoadingIds(prev => new Set(prev).add(recipeId));
+    try {
+      if (favoritesIds.has(recipeId)) {
+        await removeFavoriteRecipe(userId, recipeId);
+        setFavoritesIds(prev => {
+          const copy = new Set(prev);
+          copy.delete(recipeId);
+          return copy;
+        });
+      } else {
+        await addFavoriteRecipe(userId, recipeId);
+        setFavoritesIds(prev => new Set(prev).add(recipeId));
+      }
+    } catch (err) {
+      console.warn('Failed to toggle favorite', err);
+    } finally {
+      setFavLoadingIds(prev => {
+        const copy = new Set(prev);
+        copy.delete(recipeId);
+        return copy;
+      });
+    }
+  }
 
   useEffect(() => {
     if (isFocused) reload();
@@ -96,7 +145,7 @@ export default function RecipeScreen() {
         <View>
           <Text style={[styles.title, { color: theme.text }]}>Recipe Collection</Text>
         </View>
-        <TouchableOpacity style={[styles.addButton, { borderColor: theme.primary }]}> 
+        <TouchableOpacity style={[styles.addButton, { borderColor: theme.primary }]} onPress={() => navigation.navigate('Recipes', { screen: 'AddRecipe' })}> 
           <Ionicons name="add" size={18} color={theme.primary} />
           <Text style={[styles.addButtonText, { color: theme.primary }]}>Add Recipe</Text>
         </TouchableOpacity>
@@ -162,7 +211,16 @@ export default function RecipeScreen() {
       style={[styles.container, { backgroundColor: theme.background }]}
       data={filteredRecipes}
       keyExtractor={(item) => String(item.id)}
-      renderItem={({ item }) => <RecipeCard recipe={item} theme={theme} />}
+      renderItem={({ item }) => (
+        <RecipeCard
+          recipe={item}
+          theme={theme}
+          navigation={navigation}
+          liked={favoritesIds.has(item.id)}
+          favLoading={favLoadingIds.has(item.id)}
+          onToggleFavorite={onToggleFavorite}
+        />
+      )}
       onRefresh={onRefresh}
       refreshing={refreshing}
       ListHeaderComponent={renderHeader}

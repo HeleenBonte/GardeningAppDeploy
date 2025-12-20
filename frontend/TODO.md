@@ -1,4 +1,3 @@
-recipe detail screen
 add new recipe screen
 favorites screen
 account screen

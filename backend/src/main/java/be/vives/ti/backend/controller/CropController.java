@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
@@ -116,7 +117,7 @@ public class CropController {
                     description = "Successfully added new crop"
             )
     })
-    public ResponseEntity<?> createCrop(@RequestBody CreateCropRequest request) {
+    public ResponseEntity<?> createCrop(@Valid @RequestBody CreateCropRequest request) {
         log.debug("POST /api/crops - {}", request);
         CropResponse created = cropService.create(request);
         URI location = ServletUriComponentsBuilder
@@ -160,7 +161,7 @@ public class CropController {
     public ResponseEntity<CropResponse> updateCrop(
             @Parameter(description = "ID of the crop to update", required = true)
             @PathVariable int id,
-            @RequestBody UpdateCropRequest request) {
+            @Valid @RequestBody UpdateCropRequest request) {
         log.debug("PUT /api/crops/{} - {}", id, request);
         return cropService.update(id, request)
                 .map(updatedCrop -> ResponseEntity.ok().body(updatedCrop))
