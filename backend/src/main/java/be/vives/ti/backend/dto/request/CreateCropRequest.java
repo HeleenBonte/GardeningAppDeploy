@@ -11,22 +11,22 @@ public record CreateCropRequest(
         @Size(min = 2, max = 100, message = "Name must be between 2 and 100 characters")
         String name,
 
-        @NotBlank(message = "sowingStart is required")
+        @NotNull(message = "sowingStart is required")
         Month sowingStart,
 
-        @NotBlank(message = "sowingEnd is required")
+        @NotNull(message = "sowingEnd is required")
         Month sowingEnd,
 
-        @NotBlank(message = "plantingStart is required")
+        @NotNull(message = "plantingStart is required")
         Month plantingStart,
 
-        @NotBlank(message = "plantingEnd is required")
+        @NotNull(message = "plantingEnd is required")
         Month plantingEnd,
 
-        @NotBlank(message = "harvestStart is required")
+        @NotNull(message = "harvestStart is required")
         Month harvestStart,
 
-        @NotBlank(message = "harvestEnd is required")
+        @NotNull(message = "harvestEnd is required")
         Month harvestEnd,
 
         @NotNull(message = "inHouse is required")

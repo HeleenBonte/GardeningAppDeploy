@@ -11,10 +11,4 @@ import java.util.Optional;
 public interface CropRepository extends JpaRepository<Crop, Integer> {
     Page<Crop> findByNameContainingIgnoreCase(String name, Pageable pageable);
     Optional<Crop> findByNameIgnoreCase(String name);
-            //following methods needed? can implement in frontend
-    Page<Crop> findByInHouse(Boolean bool, Pageable pageable);
-    Page<Crop> findByInGarden(Boolean bool, Pageable pageable);
-    Page<Crop> findByInGreenhouse(Boolean bool, Pageable pageable);
-    Page<Crop> findByInPots(Boolean bool, Pageable pageable);
-
 }

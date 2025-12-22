@@ -57,6 +57,10 @@ public class Crop extends BaseEntity{
 
     }
 
+    //for testing purposes
+    public Crop(String name) {
+        this.name = name;
+    }
 
 
     public Crop(String name, Month sowingStart,

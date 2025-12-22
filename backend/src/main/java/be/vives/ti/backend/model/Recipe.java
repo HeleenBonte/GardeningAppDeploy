@@ -174,10 +174,15 @@ public class Recipe extends BaseEntity{
         this.quantities = quantities;
     }
 
+    public void addQuantity(RecipeQuantity quantity){
+        this.quantities.add(quantity);
+    }
     public void setSteps(List<RecipeStep> steps) {
         this.steps = steps;
     }
-
+    public void addStep(RecipeStep step){
+        this.steps.add(step);
+    }
     public List<RecipeStep> getSteps() {
         if(this.steps == null){
             this.steps = new ArrayList<>();

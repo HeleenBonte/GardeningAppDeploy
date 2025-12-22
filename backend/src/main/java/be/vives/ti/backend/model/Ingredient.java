@@ -55,4 +55,8 @@ public class Ingredient extends BaseEntity{
         }
         return quantities;
     }
+
+    public void setName(String tomato) {
+
+    }
 }

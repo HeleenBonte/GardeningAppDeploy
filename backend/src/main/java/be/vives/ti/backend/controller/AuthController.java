@@ -49,13 +49,13 @@ public class AuthController {
 
     @PostMapping("/register")
     @Operation(
-            summary = "Register a new customer",
-            description = "Creates a new customer account with CUSTOMER role. Returns a JWT token for immediate authentication."
+            summary = "Register a new user",
+            description = "Creates a new user account with USER role. Returns a JWT token for immediate authentication."
     )
     @ApiResponses(value = {
             @ApiResponse(
                     responseCode = "201",
-                    description = "Customer registered successfully",
+                    description = "User registered successfully",
                     content = @Content(schema = @Schema(implementation = AuthResponse.class))
             ),
             @ApiResponse(responseCode = "400", description = "Invalid registration data or email already exists")
