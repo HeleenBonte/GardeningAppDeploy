@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Note: install with `expo install @react-native-async-storage/async-storage` if not present.
 
 const THEME_KEY = 'app_theme';
+const UNIT_SYSTEM_KEY = 'unit_system';
 
 export async function setTheme(theme) {
   try {
@@ -26,6 +27,31 @@ export async function getTheme() {
 export async function clearTheme() {
   try {
     await AsyncStorage.removeItem(THEME_KEY);
+  } catch (e) {
+    // ignore
+  }
+}
+
+export async function setUnitSystem(system) {
+  try {
+    await AsyncStorage.setItem(UNIT_SYSTEM_KEY, system);
+  } catch (e) {
+    console.warn('Failed to save unit system', e);
+  }
+}
+
+export async function getUnitSystem() {
+  try {
+    const v = await AsyncStorage.getItem(UNIT_SYSTEM_KEY);
+    return v;
+  } catch (e) {
+    return null;
+  }
+}
+
+export async function clearUnitSystem() {
+  try {
+    await AsyncStorage.removeItem(UNIT_SYSTEM_KEY);
   } catch (e) {
     // ignore
   }

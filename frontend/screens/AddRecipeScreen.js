@@ -4,9 +4,15 @@ import { useTheme } from '../themes/ThemeContext';
 import AppHeader from '../components/AppHeader';
 import { getItem } from '../auth/storage';
 import { createRecipe, getMeasurements, getCourses, getCategories, getIngredients } from '../config/api';
+import unitConverter from '../lib/unitConverter';
+import useUnitPreference from '../hooks/useUnitPreference';
+import useTranslation from '../hooks/useTranslation';
+import IngredientPicker from '../components/IngredientPicker';
+import commonStyles from '../themes/styles';
 
 export default function AddRecipeScreen({ navigation }) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -49,6 +55,24 @@ export default function AddRecipeScreen({ navigation }) {
     })();
     return () => { mounted = false; };
   }, []);
+
+  const { unitSystem } = useUnitPreference();
+
+  function displayMeasurementLabel(name) {
+    if (!name) return '';
+    const nm = String(name).toLowerCase();
+    // keep tsp/tbsp and pieces as-is
+    if (/\btsp\b/.test(nm)) return 'tsp';
+    if (/\btbsp\b/.test(nm)) return 'tbsp';
+    if (/\b(piece|pieces|pcs|pc|count|stück|st)\b/.test(nm)) return name;
+    // kilograms -> show lb for imperial
+    if (nm.includes('kg') || nm.includes('kilogram')) return unitSystem === 'imperial' ? 'lbs' : name;
+    // grams -> show oz for imperial (we display ounces for smaller weights)
+    if (nm.includes('g') || nm.includes('gram')) return unitSystem === 'imperial' ? 'oz' : name;
+    // milliliters -> show fl oz for imperial
+    if (nm.includes('ml') || nm.includes('milliliter') || nm.includes('l') || nm.includes('liter')) return unitSystem === 'imperial' ? 'fl oz' : name;
+    return name;
+  }
 
   useEffect(() => {
     let mounted = true;
@@ -108,20 +132,67 @@ export default function AddRecipeScreen({ navigation }) {
         description,
         prepTime: prepTime ? `${prepTime} minutes` : null,
         cookTime: cookTime ? `${cookTime} minutes` : null,
-        imageURL: imageUrl,
+        imageURL: imageUrl ? imageUrl : null,
         courseId: courseId ? Number(courseId) : null,
         categoryId: categoryId ? Number(categoryId) : null,
-        quantities: ingredients.map((i) => ({
-          ingredientId: i.ingredientId ? Number(i.ingredientId) : null,
-          measurementId: i.measurementId ? Number(i.measurementId) : null,
-          quantity: i.quantity ? Number(i.quantity) : null,
-        })),
+        quantities: ingredients.map((i) => {
+          const ingredientId = i.ingredientId ? Number(i.ingredientId) : null;
+          const measurementId = i.measurementId ? Number(i.measurementId) : null;
+          const rawQty = i.quantity === '' || i.quantity == null ? null : Number(i.quantity);
+          let metricQty = rawQty;
+          try {
+            const mObj = measurements.find(m => String(m.id) === String(measurementId));
+            const mName = (mObj?.name || '').toString().toLowerCase();
+            if (rawQty != null && !Number.isNaN(rawQty)) {
+              // weight
+              if (mName.includes('kg') || mName.includes('kilogram')) {
+                // measurements in kilograms: store as kilograms in payload (DB expects kg)
+                if (unitSystem === 'imperial') {
+                  // user enters pounds (lb) when UI shows lb -> convert pounds to kilograms
+                  metricQty = unitConverter.poundsToGrams(rawQty) / 1000; // pounds -> grams -> kg
+                } else {
+                  metricQty = rawQty; // already in kg
+                }
+              } else if (mName.includes('g') || mName.includes('gram')) {
+                // measurements in grams
+                if (unitSystem === 'imperial') {
+                  // assume input is in ounces -> convert oz to grams
+                  metricQty = unitConverter.ouncesToGrams(rawQty);
+                } else {
+                  metricQty = rawQty;
+                }
+              } else if (mName.includes('l') || mName.includes('liter')) {
+                // liters -> store ml
+                if (unitSystem === 'imperial') {
+                  metricQty = unitConverter.flOzToMl(rawQty);
+                } else {
+                  metricQty = rawQty * 1000;
+                }
+              } else if (mName.includes('ml') || mName.includes('milliliter')) {
+                if (unitSystem === 'imperial') {
+                  metricQty = unitConverter.flOzToMl(rawQty);
+                } else {
+                  metricQty = rawQty;
+                }
+              } else {
+                // tsp, tbsp, pieces, count etc. saved as-is
+                metricQty = rawQty;
+              }
+            } else {
+              metricQty = null;
+            }
+          } catch (e) {
+            metricQty = rawQty;
+          }
+
+          return { ingredientId, measurementId, quantity: metricQty };
+        }),
         steps: steps.map((s, idx) => ({ stepNumber: idx + 1, description: s.description })),
       };
 
-      // Basic validation
-      if (!payload.name || !payload.description || !payload.prepTime || !payload.cookTime || !payload.imageURL) {
-        Alert.alert('Missing fields', 'Please fill in the required fields (name, description, prep time, cook time, image URL).');
+      // Basic validation (image URL is optional)
+      if (!payload.name || !payload.description || !payload.prepTime || !payload.cookTime) {
+        Alert.alert('Missing fields', 'Please fill in the required fields (name, description, prep time, cook time).');
         return;
       }
       if (!payload.quantities || payload.quantities.length === 0) {
@@ -131,7 +202,8 @@ export default function AddRecipeScreen({ navigation }) {
 
       // Call API
       const res = await createRecipe(payload);
-      Alert.alert('Recipe created', `Recipe created with id ${res?.id ?? ''}`);
+      const createdName = res?.name ?? name;
+      Alert.alert('Recipe created', `${createdName} created`);
       navigation.goBack();
     } catch (err) {
       console.warn('Failed to create recipe', err);
@@ -205,18 +277,46 @@ export default function AddRecipeScreen({ navigation }) {
         <ScrollView ref={scrollRef} style={[styles.container, { backgroundColor: theme.background }]} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={{ paddingBottom: keyboardHeight + 20 }}>
           <AppHeader rightIcon="close" onRightPress={() => navigation.goBack()} />
           <View style={styles.content}>
-        <Text style={[styles.heading, { color: theme.text }]}>Add Your Recipe</Text>
-        <Text style={[styles.help, { color: theme.secondaryText }]}>Share your favorite recipes with the community</Text>
+        <Text style={[styles.heading, { color: theme.text }]}>{t ? t('addRecipe.title') : 'Add Your Recipe'}</Text>
+        <Text style={[styles.help, { color: theme.secondaryText }]}>{t ? t('addRecipe.help') : 'Share your favorite recipes with the community'}</Text>
 
-        <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}> 
-          <Text style={[styles.label, { color: theme.text }]}>Recipe Name *</Text>
-          <TextInput ref={(r) => { inputRefs.current.name = r; }} onFocus={() => { setOpenIngredientFor(null); scrollToNodeKey('name'); }} style={[styles.input, { backgroundColor: theme.imagePlaceholderBg, color: theme.text }]} value={name} onChangeText={setName} placeholder="e.g., Fresh Garden Salad" placeholderTextColor={theme.secondaryText} />
+        <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder, marginHorizontal: 0, padding: 16 }]}> 
+          <Text style={[styles.label, { color: theme.text }]}>{t ? t('addRecipe.recipeNameLabel') : 'Recipe Name *'}</Text>
+          <TextInput
+            ref={(r) => { inputRefs.current.name = r; }}
+            onFocus={() => { setOpenIngredientFor(null); scrollToNodeKey('name'); }}
+            style={[styles.input, { backgroundColor: theme.imagePlaceholderBg, color: theme.text }]}
+            value={name}
+            onChangeText={setName}
+            placeholder={t ? t('addRecipe.recipeNamePlaceholder') : 'e.g., Fresh Garden Salad'}
+            placeholderTextColor={theme.secondaryText}
+            accessibilityLabel={t ? t('addRecipe.recipeNameLabel') : 'Recipe name'}
+          />
 
-          <Text style={[styles.label, { color: theme.text }]}>Description *</Text>
-          <TextInput ref={(r) => { inputRefs.current.description = r; }} onFocus={() => { setOpenIngredientFor(null); scrollToNodeKey('description'); }} style={[styles.input, { backgroundColor: theme.imagePlaceholderBg, color: theme.text, height: 80 }]} value={description} onChangeText={setDescription} placeholder="Describe your recipe..." placeholderTextColor={theme.secondaryText} multiline />
+          <Text style={[styles.label, { color: theme.text }]}>{t ? t('addRecipe.descriptionLabel') : 'Description *'}</Text>
+          <TextInput
+            ref={(r) => { inputRefs.current.description = r; }}
+            onFocus={() => { setOpenIngredientFor(null); scrollToNodeKey('description'); }}
+            style={[styles.input, { backgroundColor: theme.imagePlaceholderBg, color: theme.text, height: 80 }]}
+            value={description}
+            onChangeText={setDescription}
+            placeholder={t ? t('addRecipe.descriptionPlaceholder') : 'Describe your recipe...'}
+            placeholderTextColor={theme.secondaryText}
+            multiline
+            accessibilityLabel={t ? t('addRecipe.descriptionLabel') : 'Description'}
+          />
 
-          <Text style={[styles.label, { color: theme.text }]}>Image URL (optional)</Text>
-          <TextInput ref={(r) => { inputRefs.current.imageUrl = r; }} onFocus={() => { setOpenIngredientFor(null); scrollToNodeKey('imageUrl'); }} style={[styles.input, { backgroundColor: theme.imagePlaceholderBg, color: theme.text }]} value={imageUrl} onChangeText={setImageUrl} placeholder="https://example.com/image.jpg" placeholderTextColor={theme.secondaryText} />
+          <Text style={[styles.label, { color: theme.text }]}>{t ? t('addRecipe.imageUrlLabel') : 'Image URL (optional)'}</Text>
+          <TextInput
+            ref={(r) => { inputRefs.current.imageUrl = r; }}
+            onFocus={() => { setOpenIngredientFor(null); scrollToNodeKey('imageUrl'); }}
+            style={[styles.input, { backgroundColor: theme.imagePlaceholderBg, color: theme.text }]}
+            value={imageUrl}
+            onChangeText={setImageUrl}
+            placeholder="https://example.com/image.jpg"
+            placeholderTextColor={theme.secondaryText}
+            accessibilityLabel={t ? t('addRecipe.imageUrlLabel') : 'Image URL'}
+          />
 
           <View style={styles.row}>
             <View style={{ flex: 1, marginRight: 8 }}>
@@ -231,8 +331,9 @@ export default function AddRecipeScreen({ navigation }) {
                   placeholder="e.g., 15"
                   placeholderTextColor={theme.secondaryText}
                   keyboardType="numeric"
+                  accessibilityLabel={t ? t('addRecipe.prepTimeLabel') : 'Prep time'}
                 />
-                <Text style={[styles.units, { color: theme.secondaryText }]}>minutes</Text>
+                <Text style={[styles.units, { color: theme.secondaryText }]}>min</Text>
               </View>
             </View>
             <View style={{ flex: 1 }}>
@@ -247,8 +348,9 @@ export default function AddRecipeScreen({ navigation }) {
                   placeholder="e.g., 30"
                   placeholderTextColor={theme.secondaryText}
                   keyboardType="numeric"
+                  accessibilityLabel={t ? t('addRecipe.cookTimeLabel') : 'Cook time'}
                 />
-                <Text style={[styles.units, { color: theme.secondaryText }]}>minutes</Text>
+                <Text style={[styles.units, { color: theme.secondaryText }]}>min</Text>
               </View>
             </View>
           </View>
@@ -257,91 +359,116 @@ export default function AddRecipeScreen({ navigation }) {
 
                   <View style={styles.row}>
                     <View style={{ flex: 1, marginRight: 8 }}>
-                      <Text style={[styles.label, { color: theme.text }]}>Course</Text>
-                      <TouchableOpacity ref={(r) => { inputRefs.current.coursePicker = r; }} onPress={() => { closeAllDropdowns(); setOpenCourse(!openCourse); scrollToNodeKey('coursePicker'); }} style={[styles.pickerButton, { backgroundColor: theme.imagePlaceholderBg }]}>
-                        <Text style={{ color: courseId ? theme.text : theme.secondaryText }}>{courseId ? (courses.find(c => String(c.id) === String(courseId))?.name ?? `#${courseId}`) : 'Select course'}</Text>
+                              <Text style={[styles.label, { color: theme.text }]}>{t ? t('addRecipe.courseLabel') : 'Course'}</Text>
+                      <TouchableOpacity
+                        ref={(r) => { inputRefs.current.coursePicker = r; }}
+                        onPress={() => { closeAllDropdowns(); setOpenCourse(!openCourse); scrollToNodeKey('coursePicker'); }}
+                        style={[styles.pickerButton, { backgroundColor: theme.imagePlaceholderBg }]}
+                        accessibilityRole="button"
+                        accessibilityLabel={courseId ? (courses.find(c => String(c.id) === String(courseId))?.name ?? `#${courseId}`) : (t ? t('addRecipe.selectCourse') : 'Select course')}
+                        accessibilityHint={t ? t('addRecipe.selectCourse') : 'Opens course picker'}
+                        hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
+                      >
+                        <Text style={{ color: courseId ? theme.text : theme.secondaryText }}>{courseId ? (courses.find(c => String(c.id) === String(courseId))?.name ?? `#${courseId}`) : (t ? t('addRecipe.selectCourse') : 'Select course')}</Text>
                       </TouchableOpacity>
                       {openCourse && (
                         <View style={[styles.dropdown, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
                           {courses.map((c) => (
-                              <TouchableOpacity key={c.id} onPress={() => { setCourseId(String(c.id)); setOpenCourse(false); }} style={styles.dropdownItem}>
-                              <Text style={{ color: theme.text }}>{c.name}</Text>
-                            </TouchableOpacity>
+                              <TouchableOpacity key={c.id} onPress={() => { setCourseId(String(c.id)); setOpenCourse(false); }} style={styles.dropdownItem} accessibilityRole="button" accessibilityLabel={c.name}>
+                                <Text style={{ color: theme.text }}>{c.name}</Text>
+                              </TouchableOpacity>
                           ))}
                         </View>
                       )}
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={[styles.label, { color: theme.text }]}>Category</Text>
-                      <TouchableOpacity ref={(r) => { inputRefs.current.categoryPicker = r; }} onPress={() => { closeAllDropdowns(); setOpenCategory(!openCategory); scrollToNodeKey('categoryPicker'); }} style={[styles.pickerButton, { backgroundColor: theme.imagePlaceholderBg }]}>
-                        <Text style={{ color: categoryId ? theme.text : theme.secondaryText }}>{categoryId ? (categories.find(c => String(c.id) === String(categoryId))?.name ?? `#${categoryId}`) : 'Select category'}</Text>
+                      <Text style={[styles.label, { color: theme.text }]}>{t ? t('addRecipe.categoryLabel') : 'Category'}</Text>
+                      <TouchableOpacity
+                        ref={(r) => { inputRefs.current.categoryPicker = r; }}
+                        onPress={() => { closeAllDropdowns(); setOpenCategory(!openCategory); scrollToNodeKey('categoryPicker'); }}
+                        style={[styles.pickerButton, { backgroundColor: theme.imagePlaceholderBg }]}
+                        accessibilityRole="button"
+                        accessibilityLabel={categoryId ? (categories.find(c => String(c.id) === String(categoryId))?.name ?? `#${categoryId}`) : (t ? t('addRecipe.selectCategory') : 'Select category')}
+                        accessibilityHint={t ? t('addRecipe.selectCategory') : 'Opens category picker'}
+                        hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
+                      >
+                        <Text style={{ color: categoryId ? theme.text : theme.secondaryText }}>{categoryId ? (categories.find(c => String(c.id) === String(categoryId))?.name ?? `#${categoryId}`) : (t ? t('addRecipe.selectCategory') : 'Select category')}</Text>
                       </TouchableOpacity>
                       {openCategory && (
                         <View style={[styles.dropdown, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}> 
                           {categories.map((cat) => (
-                              <TouchableOpacity key={cat.id} onPress={() => { setCategoryId(String(cat.id)); setOpenCategory(false); }} style={styles.dropdownItem}>
-                              <Text style={{ color: theme.text }}>{cat.name}</Text>
-                            </TouchableOpacity>
+                              <TouchableOpacity key={cat.id} onPress={() => { setCategoryId(String(cat.id)); setOpenCategory(false); }} style={styles.dropdownItem} accessibilityRole="button" accessibilityLabel={cat.name}>
+                                <Text style={{ color: theme.text }}>{cat.name}</Text>
+                              </TouchableOpacity>
                           ))}
                         </View>
                       )}
                     </View>
                   </View>
 
-          <Text style={[styles.subheading, { color: theme.text }]}>Ingredients (use IDs)</Text>
+          <Text style={[styles.subheading, { color: theme.text }]}>{t ? t('addRecipe.ingredientsHeading') : 'Ingredients'}</Text>
           {ingredients.map((ing) => (
             <View key={ing.id} style={styles.itemRow}>
-              <View style={{ flex: 1, marginRight: 8 }}>
-                <TextInput ref={(r) => { inputRefs.current[`ingredientQuery-${ing.id}`] = r; }} onFocus={() => { setOpenIngredientFor(ing.id); scrollToNodeKey(`ingredientQuery-${ing.id}`); }} placeholder="Ingredient name or ID" placeholderTextColor={theme.secondaryText} value={ing.ingredientQuery || (ing.ingredientId ? String(ing.ingredientId) : '')} onChangeText={(v) => { updateIngredient(ing.id, 'ingredientQuery', v); setOpenIngredientFor(ing.id); if (/^\d+$/.test(v)) { updateIngredient(ing.id, 'ingredientId', v); } else { updateIngredient(ing.id, 'ingredientId', ''); } }} style={[styles.input, { backgroundColor: theme.imagePlaceholderBg, color: theme.text }]} />
-                {openIngredientFor === ing.id && (
-                  <View style={[styles.dropdown, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}> 
-                    {allIngredients.filter(a => {
-                      const q = (ing.ingredientQuery || '').toLowerCase();
-                      if (!q) return false;
-                      return String(a.id).includes(q) || (a.name && a.name.toLowerCase().includes(q));
-                    }).slice(0, 8).map((a) => (
-                      <TouchableOpacity key={a.id} onPress={() => { updateIngredient(ing.id, 'ingredientId', a.id); updateIngredient(ing.id, 'ingredientQuery', a.name); setOpenIngredientFor(null); }} style={styles.dropdownItem}>
-                        <Text style={{ color: theme.text }}>{a.name} #{a.id}</Text>
-                      </TouchableOpacity>
-                    ))}
-                    {(!allIngredients.filter(a => {
-                      const q = (ing.ingredientQuery || '').toLowerCase();
-                      if (!q) return false;
-                      return String(a.id).includes(q) || (a.name && a.name.toLowerCase().includes(q));
-                    }).length) && (
-                      <View style={styles.dropdownItem}><Text style={{ color: theme.secondaryText }}>No matches</Text></View>
-                    )}
-                  </View>
-                )}
+              <View style={{ flex: 1.5, marginRight: 6 }}>
+                <IngredientPicker
+                  ingredients={allIngredients}
+                  value={ing.ingredientQuery || (ing.ingredientId ? String(ing.ingredientId) : '')}
+                  onChangeText={(v) => { updateIngredient(ing.id, 'ingredientQuery', v); setOpenIngredientFor(ing.id); if (/^\d+$/.test(v)) { updateIngredient(ing.id, 'ingredientId', v); } else { updateIngredient(ing.id, 'ingredientId', ''); } }}
+                  onSelect={(a) => { if (a) { updateIngredient(ing.id, 'ingredientId', a.id); updateIngredient(ing.id, 'ingredientQuery', a.name); } else { updateIngredient(ing.id, 'ingredientId', ''); } setOpenIngredientFor(null); }}
+                  inputRef={(r) => { inputRefs.current[`ingredientQuery-${ing.id}`] = r; }}
+                  onFocus={() => { setOpenIngredientFor(ing.id); scrollToNodeKey(`ingredientQuery-${ing.id}`); }}
+                  placeholder={t ? t('addRecipe.ingredientPlaceholder') : 'Ingredient'}
+                  theme={theme}
+                />
               </View>
-              <TouchableOpacity ref={(r) => { inputRefs.current[`measurementPicker-${ing.id}`] = r; }} onPress={() => { closeAllDropdowns(); setOpenMeasurementFor(openMeasurementFor === ing.id ? null : ing.id); scrollToNodeKey(`measurementPicker-${ing.id}`); }} style={[styles.pickerButton, { flex: 1, marginRight: 8, backgroundColor: theme.imagePlaceholderBg }] }>
-                <Text style={{ color: ing.measurementId ? theme.text : theme.secondaryText }}>{ing.measurementId ? (measurements.find(m => String(m.id) === String(ing.measurementId))?.name ?? `#${ing.measurementId}`) : 'Select measurement'}</Text>
+                <TouchableOpacity
+                  ref={(r) => { inputRefs.current[`measurementPicker-${ing.id}`] = r; }}
+                  onPress={() => { closeAllDropdowns(); setOpenMeasurementFor(openMeasurementFor === ing.id ? null : ing.id); scrollToNodeKey(`measurementPicker-${ing.id}`); }}
+                  style={[styles.pickerButton, { flex: 1.5, marginRight: 6, backgroundColor: theme.imagePlaceholderBg }] }
+                  accessibilityRole="button"
+                  accessibilityLabel={ing.measurementId ? (displayMeasurementLabel(measurements.find(m => String(m.id) === String(ing.measurementId))?.name ?? `#${ing.measurementId}`)) : (t ? t('addRecipe.selectMeasurement') : 'Select measurement')}
+                  accessibilityHint={t ? t('addRecipe.selectMeasurement') : 'Opens measurement picker'}
+                  hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
+                >
+                  <Text style={{ color: ing.measurementId ? theme.text : theme.secondaryText }}>{ing.measurementId ? (displayMeasurementLabel(measurements.find(m => String(m.id) === String(ing.measurementId))?.name ?? `#${ing.measurementId}`)) : (t ? t('addRecipe.selectMeasurement') : 'Select measurement')}</Text>
+                </TouchableOpacity>
+              <TextInput
+                ref={(r) => { inputRefs.current[`ingredientQty-${ing.id}`] = r; }}
+                onFocus={() => scrollToNodeKey(`ingredientQty-${ing.id}`)}
+                placeholder="Quantity"
+                placeholderTextColor={theme.secondaryText}
+                value={String(ing.quantity)}
+                onChangeText={(v) => updateIngredient(ing.id, 'quantity', v)}
+                style={[styles.input, { flex: 1.2, backgroundColor: theme.imagePlaceholderBg, color: theme.text }]}
+                keyboardType="numeric"
+                accessibilityLabel={t ? t('addRecipe.quantityLabel') : 'Quantity'}
+              />
+              <TouchableOpacity onPress={() => removeIngredient(ing.id)} style={styles.removeBtn} accessibilityRole="button" accessibilityLabel={t ? t('close') : 'Remove'} accessibilityHint={t ? t('addRecipe.removeIngredientA11y') : 'Removes this ingredient'} hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}>
+                <Text style={{ color: theme.primary, fontSize: 20 }}>×</Text>
               </TouchableOpacity>
-              <TextInput ref={(r) => { inputRefs.current[`ingredientQty-${ing.id}`] = r; }} onFocus={() => scrollToNodeKey(`ingredientQty-${ing.id}`)} placeholder="Quantity" placeholderTextColor={theme.secondaryText} value={String(ing.quantity)} onChangeText={(v) => updateIngredient(ing.id, 'quantity', v)} style={[styles.input, { flex: 1, backgroundColor: theme.imagePlaceholderBg, color: theme.text }]} keyboardType="numeric" />
-              <TouchableOpacity onPress={() => removeIngredient(ing.id)} style={styles.removeBtn}><Text style={{ color: theme.primary }}>×</Text></TouchableOpacity>
 
               {openMeasurementFor === ing.id && (
                 <View style={[styles.dropdown, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}> 
                   {measurements.map((m) => (
-                    <TouchableOpacity key={m.id} onPress={() => { updateIngredient(ing.id, 'measurementId', m.id); setOpenMeasurementFor(null); }} style={styles.dropdownItem}>
-                      <Text style={{ color: theme.text }}>{m.name}</Text>
+                    <TouchableOpacity key={m.id} onPress={() => { updateIngredient(ing.id, 'measurementId', m.id); setOpenMeasurementFor(null); }} style={styles.dropdownItem} accessibilityRole="button" accessibilityLabel={displayMeasurementLabel(m.name)}>
+                      <Text style={{ color: theme.text }}>{displayMeasurementLabel(m.name)}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               )}
             </View>
           ))}
-          <TouchableOpacity onPress={addIngredient} style={[styles.addBtn, { borderColor: theme.primary }]}>
-            <Text style={{ color: theme.primary }}>Add Ingredient</Text>
+          <TouchableOpacity onPress={addIngredient} style={[styles.addBtn, { borderColor: theme.primary }]} accessibilityRole="button" accessibilityLabel={t ? t('addRecipe.addIngredient') : 'Add Ingredient'} hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}>
+            <Text style={{ color: theme.primary }}>{t ? t('addRecipe.addIngredient') : 'Add Ingredient'}</Text>
           </TouchableOpacity>
 
-          <Text style={[styles.subheading, { color: theme.text }]}>Instructions</Text>
+          <Text style={[styles.subheading, { color: theme.text }]}>{t ? t('addRecipe.instructions') : 'Instructions'}</Text>
           {steps.map((s, idx) => (
             <View key={s.id} style={styles.itemRow}>
               <Text style={[styles.stepNumber, { color: theme.secondaryText }]}>{idx + 1}.</Text>
               <TextInput
                 ref={(r) => { stepInputRefs.current[s.id] = r; }}
-                placeholder={`Step ${idx + 1} description`}
+                placeholder={t ? t('addRecipe.stepPlaceholder').replace('{n}', String(idx + 1)) : `Step ${idx + 1} description`}
                 placeholderTextColor={theme.secondaryText}
                 value={s.description}
                 onChangeText={(v) => updateStep(s.id, v)}
@@ -376,15 +503,17 @@ export default function AddRecipeScreen({ navigation }) {
                   }, 120);
                 }}
               />
-              <TouchableOpacity onPress={() => removeStep(s.id)} style={styles.removeBtn}><Text style={{ color: theme.primary }}>×</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => removeStep(s.id)} style={styles.removeBtn} accessibilityRole="button" accessibilityLabel={t ? t('close') : 'Remove'} accessibilityHint={t ? t('addRecipe.removeStepA11y') : 'Removes this instruction step'} hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}>
+                <Text style={{ color: theme.primary, fontSize: 20 }}>×</Text>
+              </TouchableOpacity>
             </View>
           ))}
-          <TouchableOpacity onPress={addStep} style={[styles.addBtn, { borderColor: theme.primary }]}>
-            <Text style={{ color: theme.primary }}>Add Step</Text>
+          <TouchableOpacity onPress={addStep} style={[styles.addBtn, { borderColor: theme.primary }]} accessibilityRole="button" accessibilityLabel={t ? t('addRecipe.addStep') : 'Add Step'} hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}>
+            <Text style={{ color: theme.primary }}>{t ? t('addRecipe.addStep') : 'Add Step'}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={handleSubmit} style={[styles.submitBtn, { backgroundColor: theme.primary }]}>
-            <Text style={[styles.submitText]}>Submit Recipe</Text>
+          <TouchableOpacity onPress={handleSubmit} style={[styles.submitBtn, { backgroundColor: theme.primary }]} accessibilityRole="button" accessibilityLabel={t ? t('addRecipe.submitRecipe') : 'Submit Recipe'} accessibilityHint={t ? t('addRecipe.submitA11yHint') : 'Submits the recipe'} hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}>
+            <Text style={[styles.submitText]}>{t ? t('addRecipe.submitRecipe') : 'Submit Recipe'}</Text>
           </TouchableOpacity>
         </View>
 
@@ -395,17 +524,13 @@ export default function AddRecipeScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
+const localStyles = StyleSheet.create({
   content: { padding: 16 },
-  heading: { fontSize: 20, fontWeight: '700', marginBottom: 4 },
+  heading: { fontSize: 22, fontWeight: '700', marginBottom: 4 },
   help: { marginBottom: 12 },
-  card: { borderRadius: 12, padding: 12, borderWidth: 1 },
-  label: { fontWeight: '600', marginTop: 8 },
-  input: { height: 42, borderRadius: 8, paddingHorizontal: 10, borderWidth: 1, marginTop: 6 },
   row: { flexDirection: 'row', gap: 8, marginTop: 6 },
-  subheading: { fontSize: 16, fontWeight: '700', marginTop: 12 },
-  itemRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 8 },
+  subheading: { fontSize: 18, fontWeight: '700', marginTop: 12 },
+  itemRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 6 },
   removeBtn: { paddingHorizontal: 8, paddingVertical: 6 },
   addBtn: { marginTop: 8, paddingVertical: 10, paddingHorizontal: 12, borderWidth: 1, borderRadius: 8, alignItems: 'center' },
   submitBtn: { marginTop: 16, paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
@@ -417,3 +542,4 @@ const styles = StyleSheet.create({
   inlineInputRow: { flexDirection: 'row', alignItems: 'center' },
   units: { marginLeft: 8 },
 });
+const styles = { ...commonStyles, ...localStyles };

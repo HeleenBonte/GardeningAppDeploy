@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Image, StyleSheet, TouchableOpacity, TextInput, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, Image, StyleSheet, TouchableOpacity, TextInput, RefreshControl, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { getItem } from '../auth/storage';
 import { getUserFavoriteCrops, addFavoriteCrop, removeFavoriteCrop } from '../config/api';
 import { useTheme } from '../themes/ThemeContext';
 import AppHeader from '../components/AppHeader';
+import useTranslation from '../hooks/useTranslation';
 
 import useCrops from '../hooks/useCrops';
 import { filterCrop, Month, isMonthInRange } from '../lib/cropFilters';
+import commonStyles from '../themes/styles';
 
 export default function CropScreen() {
     const navigation = useNavigation();
@@ -53,17 +55,19 @@ export default function CropScreen() {
 	const [selectedHarvestMonth, setSelectedHarvestMonth] = useState(null);
 	const [selectedSowingMonth, setSelectedSowingMonth] = useState(null);
 	const [selectedLocations, setSelectedLocations] = useState({});
+	const { t } = useTranslation();
+
 	const locationOptions = [
-		{ key: 'inPots', label: 'In Pots' },
-		{ key: 'inGreenhouse', label: 'In Greenhouse' },
-		{ key: 'inHouse', label: 'In House' },
-		{ key: 'inGarden', label: 'In Garden' },
+		{ key: 'inPots', label: t ? t('crop.location.inPots') : 'In Pots' },
+		{ key: 'inGreenhouse', label: t ? t('crop.location.inGreenhouse') : 'In Greenhouse' },
+		{ key: 'inHouse', label: t ? t('crop.location.inHouse') : 'In House' },
+		{ key: 'inGarden', label: t ? t('crop.location.inGarden') : 'In Garden' },
 	];
 
 	const filters = [
-		'Sowing/Planting Period',
-		'Harvest Period',
-		'Growing Location',
+		t ? t('crop.filter.sowingPlanting') : 'Sowing/Planting Period',
+		t ? t('crop.filter.harvest') : 'Harvest Period',
+		t ? t('crop.filter.location') : 'Growing Location',
 	];
 
 	const months = Object.values(Month);
@@ -82,12 +86,14 @@ export default function CropScreen() {
 		>
 			<AppHeader />
 			<View style={styles.titleSection}>
-				<Text style={[styles.titleText, { color: theme.text }]}>Garden Crops</Text>
-				<Text style={[styles.subtitle, { color: theme.secondaryText }]}>Explore our collection of crops with detailed growing guides</Text>
+				<Text accessibilityRole="header" accessibilityLabel={t ? t('crop.title') : 'Garden Crops'} style={[styles.titleText, { color: theme.text }]}>{t ? t('crop.title') : 'Garden Crops'}</Text>
+				<Text style={[styles.subtitle, { color: theme.secondaryText }]}>{t ? t('crop.subtitle') : 'Explore our collection of crops with detailed growing guides'}</Text>
 
 				<View style={styles.searchWrapper}>
 					<TextInput
-						placeholder="Search crops..."
+						placeholder={t ? t('crop.searchPlaceholder') : 'Search crops...'}
+						accessibilityLabel={t ? t('crop.searchPlaceholder') : 'Search crops'}
+						accessibilityHint={t ? t('crop.searchA11yHint') : 'Type a crop name to search'}
 						placeholderTextColor={theme.secondaryText}
 						value={search}
 						onChangeText={setSearch}
@@ -102,9 +108,12 @@ export default function CropScreen() {
 								key={label}
 								style={styles.filterRow}
 								onPress={() => setOpenFilter(openFilter === idx ? null : idx)}
+								accessibilityRole="button"
+								accessibilityLabel={label}
+								accessibilityHint={t ? t('crop.filter.toggleHint') : 'Toggle filter options'}
 							>
 								<Text style={[styles.filterLabel, { color: theme.text }]}>{label}</Text>
-								<Ionicons name={openFilter === idx ? 'chevron-up' : 'chevron-down'} size={18} color={theme.secondaryText} />
+								<Ionicons name={openFilter === idx ? 'chevron-up' : 'chevron-down'} size={18} color={theme.secondaryText} accessible={false} />
 							</TouchableOpacity>
 							{/* month picker for the first filter (Sowing/Planting Period) */}
 							{idx === 0 && openFilter === idx && (
@@ -112,17 +121,22 @@ export default function CropScreen() {
 									{months.map((m) => {
 										const selected = selectedSowingMonth === m;
 										return (
-											<TouchableOpacity
-												key={m}
-												style={[styles.monthItem, selected && { borderColor: theme.primary, backgroundColor: theme.activeTabBg }]}
-												onPress={() => setSelectedSowingMonth(selected ? null : m)}
-											>
-												<Text style={{ color: selected ? theme.primary : theme.text }}>{m.substring(0,3)}</Text>
-											</TouchableOpacity>
-										);
+												<TouchableOpacity
+													key={m}
+													style={[styles.monthItem, selected && { borderColor: theme.primary, backgroundColor: theme.activeTabBg }]}
+													onPress={() => setSelectedSowingMonth(selected ? null : m)}
+													accessibilityRole="button"
+													accessibilityLabel={m}
+													accessibilityState={{ selected }}
+													accessibilityHint={t ? t('crop.selectMonthA11y') : 'Toggles this month selection'}
+													hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
+												>
+													<Text style={{ color: selected ? theme.primary : theme.text }}>{m.substring(0,3)}</Text>
+												</TouchableOpacity>
+											);
 									})}
-									<TouchableOpacity onPress={() => setSelectedSowingMonth(null)} style={styles.clearButton}>
-										<Text style={{ color: theme.primary }}>Clear</Text>
+									<TouchableOpacity onPress={() => setSelectedSowingMonth(null)} style={styles.clearButton} accessibilityRole="button" accessibilityLabel={t ? t('crop.clear') : 'Clear'} accessibilityHint={t ? t('crop.clearA11yHint') : 'Clears selected sowing month'} hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}>
+										<Text style={{ color: theme.primary }}>{t ? t('crop.clear') : 'Clear'}</Text>
 									</TouchableOpacity>
 								</View>
 						)}
@@ -137,13 +151,18 @@ export default function CropScreen() {
 											key={m + '-harv'}
 											style={[styles.monthItem, selected && { borderColor: theme.primary, backgroundColor: theme.activeTabBg }]}
 											onPress={() => setSelectedHarvestMonth(selected ? null : m)}
+											accessibilityRole="button"
+											accessibilityLabel={m}
+											accessibilityState={{ selected }}
+											accessibilityHint={t ? t('crop.selectMonthA11y') : 'Toggles this month selection'}
+											hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
 										>
 											<Text style={{ color: selected ? theme.primary : theme.text }}>{m.substring(0,3)}</Text>
 										</TouchableOpacity>
 									);
 								})}
-								<TouchableOpacity onPress={() => setSelectedHarvestMonth(null)} style={styles.clearButton}>
-									<Text style={{ color: theme.primary }}>Clear</Text>
+								<TouchableOpacity onPress={() => setSelectedHarvestMonth(null)} style={styles.clearButton} accessibilityRole="button" accessibilityLabel={t ? t('crop.clear') : 'Clear'} accessibilityHint={t ? t('crop.clearA11yHint') : 'Clears selected harvest month'} hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}>
+									<Text style={{ color: theme.primary }}>{t ? t('crop.clear') : 'Clear'}</Text>
 								</TouchableOpacity>
 							</View>
 						)}
@@ -158,13 +177,18 @@ export default function CropScreen() {
 											key={opt.key}
 											style={[styles.monthItem, selected && { borderColor: theme.primary, backgroundColor: theme.activeTabBg }]}
 											onPress={() => setSelectedLocations((prev) => ({ ...prev, [opt.key]: !prev[opt.key] }))}
+											accessibilityRole="button"
+											accessibilityLabel={opt.label}
+											accessibilityState={{ selected }}
+											accessibilityHint={t ? t('crop.toggleLocationA11y') : 'Toggles this location filter'}
+											hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
 										>
 											<Text style={{ color: selected ? theme.primary : theme.text }}>{opt.label}</Text>
 										</TouchableOpacity>
 									);
 								})}
-								<TouchableOpacity onPress={() => setSelectedLocations({})} style={styles.clearButton}>
-									<Text style={{ color: theme.primary }}>Clear</Text>
+								<TouchableOpacity onPress={() => setSelectedLocations({})} style={styles.clearButton} accessibilityRole="button" accessibilityLabel={t ? t('crop.clear') : 'Clear'} accessibilityHint={t ? t('crop.clearA11yHint') : 'Clears selected locations'} hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}>
+									<Text style={{ color: theme.primary }}>{t ? t('crop.clear') : 'Clear'}</Text>
 								</TouchableOpacity>
 							</View>
 						)}
@@ -175,13 +199,13 @@ export default function CropScreen() {
 
 			{error && (
 				<View style={{ padding: 16 }}>
-					<Text style={{ color: theme.error || 'red' }}>Failed to load crops: {String(error)}</Text>
+					<Text style={{ color: theme.error || 'red' }}>{t ? t('crop.failedToLoad').replace('{error}', String(error)) : `Failed to load crops: ${String(error)}`}</Text>
 				</View>
 			)}
 
 			{loading && (
 				<View style={{ padding: 16 }}>
-					<Text style={{ color: theme.secondaryText }}>Loading...</Text>
+					<Text style={{ color: theme.secondaryText }}>{t ? t('crop.loading') : 'Loading...'}</Text>
 				</View>
 			)}
 
@@ -195,174 +219,101 @@ export default function CropScreen() {
 				.map((crop) => {
 					const isFav = favoritesIds.has(crop.id);
 					return (
-						<View key={crop.id} style={[styles.card, { borderColor: theme.cardBorder, backgroundColor: theme.cardBackground }]}>
-							<Image source={{ uri: crop.image }} style={styles.image} />
-							<View style={styles.cardContent}>
-								<Text style={[styles.cardTitle, { color: theme.text }]}>{crop.name || crop.title}</Text>
-								<Text style={[styles.cardSubtitle, { color: theme.secondaryText }]}>{crop.subtitle || crop.cropDescription}</Text>
-								<TouchableOpacity
-									style={[styles.button, { backgroundColor: theme.primary }]}
-									onPress={() => {
-										const relatedRecipes = recipes.filter(r => String(r.cropId) === String(crop.id));
-										navigation.navigate('CropDetail', { crop, relatedRecipes });
-									}}
-								>
-									<Text style={styles.buttonText}>View Details</Text>
-								</TouchableOpacity>
-							</View>
-							<TouchableOpacity
-								style={[styles.heartButton, { backgroundColor: '#2b2b2b' }]}
-									onPress={async () => {
-									const userId = await getItem('user_id');
-									if (!userId) return;
-									const cropId = crop.id;
-									setFavLoadingIds(prev => new Set(prev).add(cropId));
-									try {
-										if (isFav) {
-											await removeFavoriteCrop(userId, cropId);
-											setFavoritesIds(prev => {
-												const copy = new Set(prev);
-												copy.delete(cropId);
-												return copy;
-											});
-										} else {
-											await addFavoriteCrop(userId, cropId);
-											setFavoritesIds(prev => new Set(prev).add(cropId));
-										}
-									} catch (err) {
-										console.warn('Failed to toggle favorite crop', err);
-									} finally {
-										setFavLoadingIds(prev => {
-											const copy = new Set(prev);
-											copy.delete(cropId);
-											return copy;
-										});
-									}
-								}}
-								disabled={favLoadingIds.has(crop.id)}
-							>
-								<Ionicons name={isFav ? 'heart' : 'heart-outline'} size={20} color={isFav ? '#ff6b35' : theme.secondaryText} />
-							</TouchableOpacity>
-						</View>
-					);
+										<View key={crop.id} style={[styles.card, { borderColor: theme.cardBorder, backgroundColor: theme.cardBackground }]}> 
+										<Image accessibilityRole="image" accessibilityLabel={crop.name || crop.title} source={{ uri: crop.image }} style={styles.image} />
+										<View style={styles.cardContent}>
+											<Text accessibilityRole="header" accessibilityLabel={crop.name || crop.title} style={[styles.cardTitle, { color: theme.text }]}>{crop.name || crop.title}</Text>
+											<Text style={[styles.cardSubtitle, { color: theme.secondaryText }]}>{crop.subtitle || crop.cropDescription}</Text>
+											<TouchableOpacity
+												style={[styles.primaryButton, { backgroundColor: theme.primary }]}
+												accessibilityRole="button"
+												accessibilityLabel={t ? t('crop.viewDetails') : 'View Details'}
+												hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
+												onPress={() => {
+													const relatedRecipes = recipes.filter(r => String(r.cropId) === String(crop.id));
+													navigation.navigate('CropDetail', { crop, relatedRecipes });
+												}}
+											>
+												<Text style={styles.primaryButtonText}>{t ? t('crop.viewDetails') : 'View Details'}</Text>
+											</TouchableOpacity>
+										</View>
+										<TouchableOpacity
+											style={[styles.heartButton, { backgroundColor: theme.cardBg }]}
+											accessibilityRole="button"
+											accessibilityState={{ selected: isFav }}
+											accessibilityHint={isFav ? (t ? t('recipe.removeFromFavorites') : 'Remove from favorites') : (t ? t('recipe.saveToFavorites') : 'Save to favorites')}
+											hitSlop={{ top: 10, left: 10, right: 10, bottom: 10 }}
+											accessibilityLabel={isFav ? (t ? t('recipe.removeFromFavorites') : 'Remove from favorites') : (t ? t('recipe.saveToFavorites') : 'Save to favorites')}
+											onPress={async () => {
+												const userId = await getItem('user_id');
+												if (!userId) {
+													Alert.alert(
+														'',
+														t ? t('auth.loginRequired') : 'You need to be logged in to add/favorite.',
+														[
+															{ text: t ? t('login.signIn') : 'Login', onPress: () => navigation.navigate('Login') },
+															{ text: t ? t('common.continue') : 'Continue', style: 'cancel' },
+														],
+													);
+													return;
+												}
+												const cropId = crop.id;
+												setFavLoadingIds(prev => new Set(prev).add(cropId));
+												try {
+													if (isFav) {
+														await removeFavoriteCrop(userId, cropId);
+														setFavoritesIds(prev => {
+															const copy = new Set(prev);
+															copy.delete(cropId);
+															return copy;
+														});
+													} else {
+														await addFavoriteCrop(userId, cropId);
+														setFavoritesIds(prev => new Set(prev).add(cropId));
+													}
+												} catch (err) {
+													console.warn('Failed to toggle favorite crop', err);
+												} finally {
+													setFavLoadingIds(prev => {
+														const copy = new Set(prev);
+														copy.delete(cropId);
+														return copy;
+													});
+												}
+												}}
+												disabled={favLoadingIds.has(crop.id)}
+											>
+												<Ionicons name={isFav ? 'heart' : 'heart-outline'} size={20} color={isFav ? theme.primary : theme.secondaryText} accessible={false} />
+											</TouchableOpacity>
+										</View>
+										);
 				})}
 
 		</ScrollView>
 	);
 }
 
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-	},
-      titleSection: {
-    padding: 20,
-  },
-  titleText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-	appBar: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		paddingHorizontal: 12,
-		paddingVertical: 10,
-	},
-	appBarLeft: {
-		flexDirection: 'row',
-		alignItems: 'center',
-	},
-	appLogo: {
-		width: 34,
-		height: 34,
-		borderRadius: 18,
-		justifyContent: 'center',
-		alignItems: 'center',
-		marginRight: 8,
-	},
-	appName: {
-		fontSize: 14,
-		fontWeight: '600',
-	},
-	searchWrapper: {
-		marginTop: 12,
-	},
-	searchInput: {
-		height: 42,
-		borderRadius: 10,
-		paddingHorizontal: 12,
-		borderWidth: 1,
-	},
-	filtersContainer: {
-		marginTop: 12,
-		marginHorizontal: -4,
-		borderRadius: 8,
-		overflow: 'hidden',
-	},
-	filterRow: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		paddingVertical: 12,
-		paddingHorizontal: 12,
-		borderBottomWidth: 1,
-	},
-	filterLabel: {
-		fontSize: 14,
-	},
-	monthsWrapper: {
-		flexDirection: 'row',
-		flexWrap: 'wrap',
-		padding: 8,
-		gap: 6,
-		alignItems: 'center',
-	},
-	monthItem: {
-		paddingVertical: 6,
-		paddingHorizontal: 8,
-		borderRadius: 6,
-		borderWidth: 1,
-		marginRight: 6,
-	},
-	clearButton: {
-		marginLeft: 8,
-		paddingHorizontal: 8,
-		paddingVertical: 6,
-	},
-	card: {
-		marginHorizontal: 16,
-		marginBottom: 16,
-		borderRadius: 8,
-		overflow: 'hidden',
-		borderWidth: 1,
-	},
-	heartButton: { position: 'absolute', top: 12, right: 12, width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 4, elevation: 2 },
-	image: {
-		width: '100%',
-		height: 180,
-	},
-	cardContent: {
-		padding: 12,
-	},
-	cardTitle: {
-		fontSize: 18,
-		fontWeight: '600',
-	},
-	cardSubtitle: {
-		marginTop: 6,
-		fontSize: 13,
-		marginBottom: 10,
-	},
-	button: {
-		alignSelf: 'flex-start',
-		paddingVertical: 8,
-		paddingHorizontal: 14,
-		borderRadius: 6,
-	},
-	buttonText: {
-		color: '#fff',
-		fontWeight: '600',
-	},
+const localStyles = StyleSheet.create({
+	titleSection: { padding: 20 },
+  appBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10 },
+  appBarLeft: { flexDirection: 'row', alignItems: 'center' },
+  appLogo: { width: 34, height: 34, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginRight: 8 },
+	appName: { fontSize: 15, fontWeight: '600' },
+  searchWrapper: { marginTop: 12 },
+	filterRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 12, borderBottomWidth: 1 },
+	filterLabel: { fontSize: 15 },
+	monthsWrapper: { flexDirection: 'row', flexWrap: 'wrap', padding: 8, gap: 6, alignItems: 'center' },
+	monthItem: { paddingVertical: 6, paddingHorizontal: 8, borderRadius: 6, borderWidth: 1, marginRight: 6 },
+	clearButton: { marginLeft: 8, paddingHorizontal: 8, paddingVertical: 6 },
+	card: { marginHorizontal: 16, marginBottom: 16, borderRadius: 8, overflow: 'hidden', borderWidth: 1 },
+  heartButton: { position: 'absolute', top: 12, right: 12, width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 4, elevation: 2 },
+  image: { width: '100%', height: 180 },
+	cardContent: { padding: 12 },
+	cardTitle: { fontSize: 19, fontWeight: '600' },
+	cardSubtitle: { marginTop: 6, fontSize: 14, marginBottom: 10 },
+  button: { alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 14, borderRadius: 6 },
+  buttonText: { color: '#fff', fontWeight: '600' },
+	searchInput: { height: 42, borderRadius: 10, paddingHorizontal: 12, borderWidth: 1 },
+  filtersContainer: { marginTop: 12, marginHorizontal: -4, borderRadius: 8, overflow: 'hidden' },
 });
+const styles = { ...commonStyles, ...localStyles };

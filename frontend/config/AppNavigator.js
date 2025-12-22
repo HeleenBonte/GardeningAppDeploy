@@ -1,21 +1,26 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
+import { Alert } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../themes/ThemeContext';
+import useTranslation from '../hooks/useTranslation';
 
 import HomeScreen from '../screens/HomeScreen';
 import CropScreen from '../screens/CropScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import AccountScreen from '../screens/AccountScreen';
+import EditAccountScreen from '../screens/EditAccountScreen';
 import CropDetailScreen from '../screens/CropDetailScreen';
+import OwnRecipeScreen from '../screens/OwnRecipeScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import RecipeScreen from '../screens/RecipeScreen';
 import RecipeDetailScreen from '../screens/RecipeDetailScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
 import AddRecipeScreen from '../screens/AddRecipeScreen';
-import { getJwtToken } from '../auth/storage';
+import { getJwtToken, onLogout } from '../auth/storage';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -24,6 +29,7 @@ const RecipesStack = createNativeStackNavigator();
 
 function MainTabs() {
   const { theme } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <Tab.Navigator
@@ -49,42 +55,50 @@ function MainTabs() {
             iconName = focused ? 'heart' : 'heart-outline';
           }
 
-          return <Ionicons name={iconName} size={size} color={color} />;
+          return <Ionicons name={iconName} size={size} color={color} accessible={false} />;
         },
       })}
     >
       <Tab.Screen 
         name="HomeTab" 
         component={HomeScreen} 
-        options={{ tabBarLabel: 'Home' }}
+        options={{ tabBarLabel: t ? t('tabs.home') : 'Home', tabBarAccessibilityLabel: t ? t('tabs.home') : 'Home', tabBarAccessibilityHint: t ? t('tabs.homeHint') : 'Go to Home' }}
       />
       <Tab.Screen 
         name="Crops" 
         component={CropsStackScreen} 
-        options={{ tabBarLabel: 'Crops' }}
+        options={{ tabBarLabel: t ? t('tabs.crops') : 'Crops', tabBarAccessibilityLabel: t ? t('tabs.crops') : 'Crops', tabBarAccessibilityHint: t ? t('tabs.cropsHint') : 'Go to Crops' }}
       />
       <Tab.Screen 
         name="Recipes" 
         component={RecipesStackScreen} 
-        options={{ tabBarLabel: 'Recipes' }}
+        options={{ tabBarLabel: t ? t('tabs.recipes') : 'Recipes', tabBarAccessibilityLabel: t ? t('tabs.recipes') : 'Recipes', tabBarAccessibilityHint: t ? t('tabs.recipesHint') : 'Go to Recipes' }}
       />
       <Tab.Screen 
         name="Favorites" 
         component={FavoritesScreen} 
-        options={{ tabBarLabel: 'Favorites' }}
+        options={{ tabBarLabel: t ? t('tabs.favorites') : 'Favorites', tabBarAccessibilityLabel: t ? t('tabs.favorites') : 'Favorites', tabBarAccessibilityHint: t ? t('tabs.favoritesHint') : 'Go to Favorites' }}
         listeners={({ navigation }) => ({
           tabPress: (e) => {
             (async () => {
+              // capture the currently selected tab so we can restore it
+              const state = navigation.getState && navigation.getState();
+              const prevRoute = state && state.routes && state.routes[state.index] && state.routes[state.index].name;
               try {
                 const token = await getJwtToken();
                 if (!token) {
                   e.preventDefault();
-                  navigation.navigate('Login');
+                  // restore previously selected tab (if any) immediately
+                  if (prevRoute) navigation.navigate(prevRoute);
+                  // navigate to Login on the parent stack so Login is on top
+                  const parent = navigation.getParent && navigation.getParent();
+                  if (parent && parent.navigate) parent.navigate('Login');
                 }
                 // if token exists, allow default tab behavior (navigate to Favorites tab)
               } catch (err) {
                 e.preventDefault();
-                navigation.navigate('Login');
+                const parent = navigation.getParent && navigation.getParent();
+                if (parent && parent.navigate) parent.navigate('Login');
               }
             })();
           }
@@ -96,7 +110,7 @@ function MainTabs() {
 
 function CropsStackScreen() {
   return (
-    <CropsStack.Navigator screenOptions={{ headerShown: false }}>
+    <CropsStack.Navigator screenOptions={{ headerShown: false, gestureEnabled: true }}>
       <CropsStack.Screen name="CropsList" component={CropScreen} />
       <CropsStack.Screen name="CropDetail" component={CropDetailScreen} />
     </CropsStack.Navigator>
@@ -105,7 +119,7 @@ function CropsStackScreen() {
 
 function RecipesStackScreen() {
   return (
-    <RecipesStack.Navigator screenOptions={{ headerShown: false }}>
+    <RecipesStack.Navigator screenOptions={{ headerShown: false, gestureEnabled: true }}>
       <RecipesStack.Screen name="RecipesList" component={RecipeScreen} />
       <RecipesStack.Screen name="AddRecipe" component={AddRecipeScreen} />
       <RecipesStack.Screen name="RecipeDetail" component={RecipeDetailScreen} />
@@ -113,17 +127,47 @@ function RecipesStackScreen() {
   );
 }
 
+export const navigationRef = createNavigationContainerRef();
+
 export default function AppNavigator() {
+  React.useEffect(() => {
+    const unsub = onLogout((reason) => {
+      try {
+        // Show an alert if logout was caused by token expiry
+        if (reason === 'expired') {
+          try { Alert.alert('Session expired', 'Your login has expired'); } catch (_) { /* ignore */ }
+        }
+
+        if (navigationRef.isReady && navigationRef.isReady()) {
+          // reset navigation stack and go to Login
+          if (navigationRef.resetRoot) {
+            navigationRef.resetRoot({ index: 0, routes: [{ name: 'Login' }] });
+          } else {
+            navigationRef.navigate('Login');
+          }
+        }
+      } catch (e) {
+        // ignore navigation errors
+      }
+    });
+    return () => unsub();
+  }, []);
+
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
+          gestureEnabled: true,
+          gestureResponseDistance: { horizontal: 35 },
         }}
       >
           <Stack.Screen name="Main" component={MainTabs} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="Account" component={AccountScreen} />
+        <Stack.Screen name="EditAccount" component={EditAccountScreen} />
+        <Stack.Screen name="OwnRecipes" component={OwnRecipeScreen} />
         <Stack.Screen 
           name="Settings" 
           component={SettingsScreen}

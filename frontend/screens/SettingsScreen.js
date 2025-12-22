@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,21 +11,92 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../themes/ThemeContext';
 import AppHeader from '../components/AppHeader';
-import DebugMeButton from '../components/DebugMeButton';
+import { getJwtToken } from '../auth/storage';
+import useUnitPreference from '../hooks/useUnitPreference';
+import useTranslation from '../hooks/useTranslation';
+import { useIsFocused } from '@react-navigation/native';
+import { logout } from '../auth/storage';
+import commonStyles from '../themes/styles';
 
 
 export default function SettingsScreen({ navigation }) {
   const { theme, isDarkMode, toggleTheme, currentSeason, seasonOverride, setSeasonOverride } = useTheme();
   
-  const [displayLanguage, setDisplayLanguage] = useState('English');
-  const [measurementSystem, setMeasurementSystem] = useState('Metric (Default)');
-  const [translationsEnabled, setTranslationsEnabled] = useState(false);
+  const { t, language, setLanguage, enabled, setEnabled } = useTranslation();
+  const { unitSystem, setUnitSystem, loading: unitLoading, isImperial } = useUnitPreference();
   const [showTranslations, setShowTranslations] = useState(false);
-  const [showMeasurementOptions, setShowMeasurementOptions] = useState(false);
   const [showSeasonOptions, setShowSeasonOptions] = useState(false);
-  const seasons = ['Spring', 'Summer', 'Fall', 'Winter'];
-  const languages = ['English', 'Dutch', 'French', 'German', 'Spanish'];
-  const measurements = ['Metric (Default)', 'Imperial'];
+  const seasons = ['spring', 'summer', 'fall', 'winter'];
+  const languages = ['en', 'nl'];
+  const measurements = ['metric', 'imperial'];
+  const [tokenExpiry, setTokenExpiry] = useState(null);
+  const focused = useIsFocused();
+
+  // translation helper that respects the `enabled` toggle
+  const tr = (key, fallback) => {
+    if (enabled) return t ? t(key) : (fallback ?? '');
+    return fallback ?? (t ? t(key) : '');
+  };
+
+  // normalize current/override season into translation keys (spring, summer, fall, winter)
+  const seasonKey = (() => {
+    try {
+      let s = (currentSeason || '').toString().toLowerCase();
+      if (!s) return '';
+      if (s === 'autumn') s = 'fall';
+      return s;
+    } catch (_) { return ''; }
+  })();
+
+  const overrideKey = (() => {
+    try {
+      let s = (seasonOverride || '').toString().toLowerCase();
+      if (!s) return '';
+      if (s === 'autumn') s = 'fall';
+      return s;
+    } catch (_) { return ''; }
+  })();
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const token = await getJwtToken();
+        if (!mounted) return;
+        if (!token) {
+          setTokenExpiry(null);
+          return;
+        }
+        // decode JWT payload safely
+        try {
+          const parts = token.split('.');
+          if (parts.length >= 2) {
+            const payloadB64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+            const pad = payloadB64.length % 4;
+            const padded = pad ? payloadB64 + '='.repeat(4 - pad) : payloadB64;
+            const decoded = typeof atob === 'function' ? atob(padded) : null;
+            let json = decoded;
+            if (decoded) {
+              try {
+                json = decodeURIComponent(Array.prototype.map.call(decoded, (c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+              } catch (_) { json = decoded; }
+            }
+            const obj = json ? JSON.parse(json) : null;
+            if (obj && obj.exp) {
+              setTokenExpiry(new Date(Number(obj.exp) * 1000));
+            } else {
+              setTokenExpiry(null);
+            }
+          }
+        } catch (e) {
+          setTokenExpiry(null);
+        }
+      } catch (e) {
+        setTokenExpiry(null);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [focused]);
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -33,31 +104,31 @@ export default function SettingsScreen({ navigation }) {
 
       {/* Settings Title */}
       <View style={styles.titleSection}>
-        <Ionicons name="settings" size={24} color={theme.primary} />
-        <Text style={[styles.titleText, { color: theme.text }]}>Settings</Text>
-        <Ionicons name="leaf" size={24} color={theme.primary} />
+        <Ionicons name="settings" size={24} color={theme.primary} accessible={false} />
+        <Text accessibilityRole="header" accessibilityLabel={tr('settings','Settings')} style={[styles.titleText, { color: theme.text }]}>{tr('settings','Settings')}</Text>
+        <Ionicons name="leaf" size={24} color={theme.primary} accessible={false} />
       </View>
 
       <Text style={[styles.subtitle, { color: theme.secondaryText }]}>
-        Customize your experience
+        {tr('customizeExperience','Customize your experience')}
       </Text>
 
       {/* Appearance Section */}
       <View style={[styles.section, { backgroundColor: theme.cardBg, borderWidth: 1, borderColor: theme.cardBorder, borderRadius: 12, margin: 12, padding: 16 }]}>
         <View style={styles.sectionHeader}>
           <Ionicons name="color-palette-outline" size={20} color={theme.primary} />
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Appearance</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>{tr('appearance','Appearance')}</Text>
         </View>
         <Text style={[styles.sectionSubtitle, { color: theme.secondaryText }]}>
-          Customize how the app looks
+          {tr('appearanceSubtitle','Customize how the app looks')}
         </Text>
 
         {/* Dark Mode Toggle */}
         <View style={[styles.settingRow, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.settingLabel, { color: theme.text }]}>Dark Mode</Text>
+            <Text style={[styles.settingLabel, { color: theme.text }]}>{tr('darkMode','Dark Mode')}</Text>
             <Text style={[styles.settingDescription, { color: theme.secondaryText }]}>
-              Switch between light and dark themes
+              {tr('darkModeDescription','Switch between light and dark themes')}
             </Text>
           </View>
           <Switch
@@ -65,6 +136,8 @@ export default function SettingsScreen({ navigation }) {
             onValueChange={toggleTheme}
             trackColor={{ false: '#D0D0D0', true: theme.primary }}
             thumbColor="#FFF"
+            accessibilityLabel={tr('darkMode','Dark Mode')}
+            accessibilityHint={tr('darkModeDescription','Switch between light and dark themes')}
           />
         </View>
 
@@ -72,11 +145,11 @@ export default function SettingsScreen({ navigation }) {
         <View style={styles.themePreviewRow}>
           <View style={[styles.previewCardSmall, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
             <View style={[styles.circleIcon, { backgroundColor: theme.activeTabBg,    borderWidth: 1,    borderColor: theme.cardBorder }]}> 
-              <Ionicons name="leaf" size={20} color={theme.primary} />
+              <Ionicons name="leaf" size={20} color={theme.primary} accessible={false} />
             </View>
             <View style={{ marginTop: 8, alignItems: 'center' }}>
-              <Text style={[styles.previewCardTitle, { color: theme.text, textAlign: 'center' }]}>{currentSeason} Season</Text>
-              <Text style={[styles.previewCardSubtitle, { color: theme.secondaryText, textAlign: 'center' }]}>{isDarkMode ? 'Dark mode' : 'Light mode'}</Text>
+              <Text style={[styles.previewCardTitle, { color: theme.text, textAlign: 'center' }]}>{(seasonKey ? tr(`seasons.${seasonKey}`, currentSeason) : currentSeason)} {tr('seasonLabel','Season')}</Text>
+              <Text style={[styles.previewCardSubtitle, { color: theme.secondaryText, textAlign: 'center' }]}>{isDarkMode ? tr('darkModeOn','Dark mode') : tr('darkModeOff','Light mode')}</Text>
             </View>
           </View>
 
@@ -86,8 +159,8 @@ export default function SettingsScreen({ navigation }) {
             end={{ x: 1, y: 1 }}
             style={[styles.previewCardLarge, { borderColor: theme.cardBorder }]}
           >
-            <Text style={[styles.previewCardTitle, { color: theme.text }]}>Seasonal Colors</Text>
-            <Text style={[styles.previewCardSubtitle, { color: theme.secondaryText }]}>Active throughout the app</Text>
+            <Text style={[styles.previewCardTitle, { color: theme.text }]} accessibilityLabel={tr('seasonalColors','Seasonal Colors')}>{tr('seasonalColors','Seasonal Colors')}</Text>
+            <Text style={[styles.previewCardSubtitle, { color: theme.secondaryText }]} accessibilityLabel={tr('seasonalColorsDesc','Active throughout the app')}>{tr('seasonalColorsDesc','Active throughout the app')}</Text>
           </LinearGradient>
         </View>
 
@@ -95,8 +168,8 @@ export default function SettingsScreen({ navigation }) {
         <View style={{ height: 12 }} />
         <View style={[styles.settingRow, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}> 
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: theme.text }]}>Manual Season (dev)</Text>
-            <Text style={[styles.settingDescription, { color: theme.secondaryText }]}>Override detected season for testing</Text>
+            <Text style={[styles.settingLabel, { color: theme.text }]}>{tr('manualSeason','Manual Season (dev)')}</Text>
+            <Text style={[styles.settingDescription, { color: theme.secondaryText }]}>{tr('manualSeasonDesc','Override detected season for testing')}</Text>
           </View>
           <Switch
             value={!!seasonOverride}
@@ -106,6 +179,8 @@ export default function SettingsScreen({ navigation }) {
             }}
             trackColor={{ false: '#D0D0D0', true: theme.primary }}
             thumbColor="#FFF"
+            accessibilityLabel={tr('manualSeason','Manual Season (dev)')}
+            accessibilityHint={tr('manualSeasonDesc','Override detected season for testing')}
           />
         </View>
 
@@ -114,12 +189,16 @@ export default function SettingsScreen({ navigation }) {
             <TouchableOpacity
               style={[styles.settingRow, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}
               onPress={() => setShowSeasonOptions(!showSeasonOptions)}
+              accessibilityRole="button"
+              accessibilityLabel={tr('selectedSeason','Selected Season')}
+              accessibilityHint={tr('selectedSeason','Selected Season')}
+              hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
             >
               <View style={styles.settingInfo}>
-                <Text style={[styles.settingLabel, { color: theme.text }]}>Selected Season</Text>
-                <Text style={[styles.settingValue, { color: theme.primary }]}>{seasonOverride}</Text>
+                <Text style={[styles.settingLabel, { color: theme.text }]}>{tr('selectedSeason','Selected Season')}</Text>
+                <Text style={[styles.settingValue, { color: theme.primary }]}>{overrideKey ? tr(`seasons.${overrideKey}`, seasonOverride) : seasonOverride}</Text>
               </View>
-              <Ionicons name={showSeasonOptions ? 'chevron-up' : 'chevron-down'} size={20} color={theme.secondaryText} />
+              <Ionicons name={showSeasonOptions ? 'chevron-up' : 'chevron-down'} size={20} color={theme.secondaryText} accessible={false} />
             </TouchableOpacity>
 
             {showSeasonOptions && (
@@ -129,19 +208,27 @@ export default function SettingsScreen({ navigation }) {
                     key={season}
                     style={styles.optionRow}
                     onPress={() => {
+                      // store override as the displayed string (keeps existing behavior)
                       setSeasonOverride(season);
                       setShowSeasonOptions(false);
                     }}
+                    accessibilityRole="button"
+                    accessibilityLabel={tr(`seasons.${season}`, season)}
+                    accessibilityState={{ selected: season === overrideKey }}
+                    hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
                   >
-                    <Text style={[styles.optionText, { color: season === seasonOverride ? theme.primary : theme.text }]}>{season}</Text>
-                    {season === seasonOverride && <Ionicons name="checkmark" size={20} color={theme.primary} />}
+                    <Text style={[styles.optionText, { color: season === overrideKey ? theme.primary : theme.text }]}>{tr(`seasons.${season}`, season)}</Text>
+                    {season === overrideKey && <Ionicons name="checkmark" size={20} color={theme.primary} accessible={false} />}
                   </TouchableOpacity>
                 ))}
                 <TouchableOpacity
                   style={styles.optionRow}
                   onPress={() => { setSeasonOverride(null); setShowSeasonOptions(false); }}
+                  accessibilityRole="button"
+                  accessibilityLabel={tr('resetToAuto','Reset to Auto')}
+                  hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
                 >
-                  <Text style={[styles.optionText, { color: theme.text }]}>Reset to Auto</Text>
+                  <Text style={[styles.optionText, { color: theme.text }]}>{tr('resetToAuto','Reset to Auto')}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -153,141 +240,177 @@ export default function SettingsScreen({ navigation }) {
       <View style={[styles.section, { backgroundColor: theme.cardBg, borderWidth: 1, borderColor: theme.cardBorder, borderRadius: 12, margin: 12, padding: 16 }]}>
         <View style={styles.sectionHeader}>
           <Ionicons name="language-outline" size={20} color={theme.primary} />
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Language</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>{tr('language','Language')}</Text>
         </View>
-        <Text style={[styles.sectionSubtitle, { color: theme.secondaryText }]}>Choose your preferred language and translation options</Text>
+        <Text style={[styles.sectionSubtitle, { color: theme.secondaryText }]}>{tr('languageSubtitle','Choose your preferred language and translation options')}</Text>
 
         {/* Translations Enable Toggle */}
         <View style={[styles.settingRow, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}> 
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: theme.text }]}>Enable Translations</Text>
-            <Text style={[styles.settingDescription, { color: theme.secondaryText }]}>Automatically translate content into your chosen language</Text>
+            <Text style={[styles.settingLabel, { color: theme.text }]}>{tr('enableTranslations','Enable Translations')}</Text>
+            <Text style={[styles.settingDescription, { color: theme.secondaryText }]}>{tr('enableTranslationsDescription','Automatically translate content into your chosen language')}</Text>
           </View>
           <Switch
-            value={translationsEnabled}
-            onValueChange={(val) => setTranslationsEnabled(val)}
+            value={enabled}
+            onValueChange={(val) => setEnabled(val)}
             trackColor={{ false: '#D0D0D0', true: theme.primary }}
             thumbColor="#FFF"
+            accessibilityLabel={tr('enableTranslations','Enable Translations')}
+            accessibilityHint={tr('enableTranslationsDescription','Automatically translate content into your chosen language')}
           />
         </View>
 
         {/* Display Language */}
         <TouchableOpacity 
           style={[styles.settingRow, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}
-          onPress={() => translationsEnabled && setShowTranslations(!showTranslations)}
+          onPress={() => enabled && setShowTranslations(!showTranslations)}
+          accessibilityRole="button"
+          accessibilityLabel={enabled ? tr('displayLanguage','Display Language') : `${tr('displayLanguage','Display Language')} (Disabled)`}
+          accessibilityHint={tr('displayLanguage','Display Language')}
+          hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
         >
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: theme.text }]}>{translationsEnabled ? 'Display Language' : 'Display Language (Disabled)'}</Text>
-            <Text style={[styles.settingValue, { color: translationsEnabled ? theme.primary : theme.secondaryText }]}>{displayLanguage}</Text>
+            <Text style={[styles.settingLabel, { color: theme.text }]}>{enabled ? tr('displayLanguage','Display Language') : `${tr('displayLanguage','Display Language')} (Disabled)`}</Text>
+            <Text style={[styles.settingValue, { color: enabled ? theme.primary : theme.secondaryText }]}>{language === 'nl' ? tr('dutch','Dutch') : tr('english','English')}</Text>
           </View>
           <Ionicons 
             name={showTranslations ? "chevron-up" : "chevron-down"} 
             size={20} 
-            color={translationsEnabled ? theme.secondaryText : '#B0B0B0'} 
+            color={enabled ? theme.secondaryText : '#B0B0B0'} 
+            accessible={false}
           />
         </TouchableOpacity>
 
-        {translationsEnabled && showTranslations && (
+        {enabled && showTranslations && (
           <View style={[styles.optionsContainer, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
-            {languages.map((lang) => (
-              <TouchableOpacity
-                key={lang}
-                style={styles.optionRow}
-                onPress={() => {
-                  setDisplayLanguage(lang);
-                  setShowTranslations(false);
-                }}
-              >
-                <Text style={[
-                  styles.optionText,
-                  { color: lang === displayLanguage ? theme.primary : theme.text }
-                ]}>
-                  {lang}
-                </Text>
-                {lang === displayLanguage && (
-                  <Ionicons name="checkmark" size={20} color={theme.primary} />
-                )}
-              </TouchableOpacity>
-            ))}
+            {languages.map((code) => {
+              const label = code === 'nl' ? tr('dutch','Dutch') : tr('english','English');
+                return (
+                <TouchableOpacity
+                  key={code}
+                  style={styles.optionRow}
+                  onPress={() => {
+                    setLanguage(code);
+                    setShowTranslations(false);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={label}
+                  accessibilityState={{ selected: code === language }}
+                  hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
+                >
+                  <Text style={[
+                    styles.optionText,
+                    { color: code === language ? theme.primary : theme.text }
+                  ]}>
+                    {label}
+                  </Text>
+                  {code === language && (
+                    <Ionicons name="checkmark" size={20} color={theme.primary} accessible={false} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
         )}
-
-        <Text style={[styles.helperText, { color: theme.secondaryText }]}>Translation feature in-app; enable to translate UI content where available</Text>
       </View>
       
       {/* Units & Measurements Section */}
       <View style={[styles.section, { backgroundColor: theme.cardBg, borderWidth: 1, borderColor: theme.cardBorder, borderRadius: 12, margin: 12, padding: 16 }]}> 
         <View style={styles.sectionHeader}>
           <Ionicons name="calculator-outline" size={20} color={theme.primary} />
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Units & Measurements</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>{tr('units','Units & Measurements')}</Text>
         </View>
-        <Text style={[styles.sectionSubtitle, { color: theme.secondaryText }]}>Choose your preferred measurement system</Text>
+        <Text style={[styles.sectionSubtitle, { color: theme.secondaryText }]}>{tr('unitsSubtitle','Choose your preferred measurement system')}</Text>
 
         {/* Toggle row */}
         <View style={[styles.settingRow, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}> 
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: theme.text }]}>{measurementSystem === 'Imperial' ? 'Imperial Units' : 'Metric (Default)'}</Text>
+            <Text style={[styles.settingLabel, { color: theme.text }]}>{isImperial ? (t ? t('imperial') : 'Imperial') : (t ? t('metric') : 'Metric (Default)')}</Text>
             <Text style={[styles.settingDescription, { color: theme.secondaryText }]}>
-              {measurementSystem === 'Imperial'
-                ? 'Use inches, feet, Fahrenheit, and cups'
-                : 'Use Celsius, centimeters, milliliters, and grams'}
+              {isImperial
+                ? (t ? t('imperialDescription') : 'Use ounces, fluid ounces, and pounds')
+                : (t ? t('metricDescription') : 'Use grams, milliliters, and kilograms')}
             </Text>
           </View>
           <Switch
-            value={measurementSystem !== 'Metric (Default)'}
-            onValueChange={(val) => setMeasurementSystem(val ? 'Imperial' : 'Metric (Default)')}
+            value={isImperial}
+            onValueChange={(val) => setUnitSystem(val ? 'imperial' : 'metric')}
             trackColor={{ false: '#D0D0D0', true: theme.primary }}
             thumbColor="#FFF"
+            accessibilityLabel={tr('units','Units & Measurements')}
+            accessibilityHint={tr('unitsSubtitle','Choose your preferred measurement system')}
           />
         </View>
 
         {/* Two-column card showing Metric and Imperial details */}
         <View style={[styles.unitsCard, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
           <View style={styles.unitsColumn}>
-            <Text style={[styles.unitsTitle, { color: theme.text }]}>Metric (Default)</Text>
+            <Text style={[styles.unitsTitle, { color: theme.text }]}>{t ? t('metric') : 'Metric (Default)'}</Text>
             <View style={styles.unitsList}>
-              <Text style={[styles.unitsItem, { color: theme.secondaryText }]}>• Celsius (°C)</Text>
-              <Text style={[styles.unitsItem, { color: theme.secondaryText }]}>• Centimeters (cm)</Text>
-              <Text style={[styles.unitsItem, { color: theme.secondaryText }]}>• Milliliters (ml)</Text>
-              <Text style={[styles.unitsItem, { color: theme.secondaryText }]}>• Grams (g)</Text>
+              <Text style={[styles.unitsItem, { color: theme.secondaryText }]}>{t ? t('gramsItem') : '• Grams (g)'}</Text>
+              <Text style={[styles.unitsItem, { color: theme.secondaryText }]}>{t ? t('millilitersItem') : '• Milliliters (mL)'}</Text>
+              <Text style={[styles.unitsItem, { color: theme.secondaryText }]}>{t ? t('kilogramsItem') : '• Kilograms (kg)'}</Text>
             </View>
           </View>
 
           <View style={styles.unitsColumn}>
-            <Text style={[styles.unitsTitle, { color: theme.text }]}>Imperial</Text>
+            <Text style={[styles.unitsTitle, { color: theme.text }]}>{t ? t('imperial') : 'Imperial'}</Text>
             <View style={styles.unitsList}>
-              <Text style={[styles.unitsItem, { color: theme.secondaryText }]}>• Fahrenheit (°F)</Text>
-              <Text style={[styles.unitsItem, { color: theme.secondaryText }]}>• Inches (in)</Text>
-              <Text style={[styles.unitsItem, { color: theme.secondaryText }]}>• Cups/Ounces (oz)</Text>
-              <Text style={[styles.unitsItem, { color: theme.secondaryText }]}>• Pounds (lbs)</Text>
+              <Text style={[styles.unitsItem, { color: theme.secondaryText }]}>{t ? t('ouncesItem') : '• Ounces (oz)'}</Text>
+              <Text style={[styles.unitsItem, { color: theme.secondaryText }]}>{t ? t('flOzItem') : '• Fluid Ounces (fl oz)'}</Text>
+              <Text style={[styles.unitsItem, { color: theme.secondaryText }]}>{t ? t('poundsItem') : '• Pounds (lbs)'}</Text>
             </View>
           </View>
         </View>
       </View>
-            <DebugMeButton />
 
       {/* About Section */}
       <View style={[styles.section, styles.lastSection, { backgroundColor: theme.cardBg, borderWidth: 1, borderColor: theme.cardBorder, borderRadius: 12, margin: 12, padding: 16 }]}> 
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>About</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>{t ? t('about') : 'About'}</Text>
         
         <View style={styles.aboutRow}>
-          <Text style={[styles.aboutLabel, { color: theme.secondaryText }]}>App Version</Text>
+          <Text style={[styles.aboutLabel, { color: theme.secondaryText }]}>{t ? t('appVersion') : 'App Version'}</Text>
           <Text style={[styles.aboutValue, { color: theme.text }]}>1.0.0</Text>
         </View>
         
         <View style={styles.aboutRow}>
-          <Text style={[styles.aboutLabel, { color: theme.secondaryText }]}>Current Season</Text>
+          <Text style={[styles.aboutLabel, { color: theme.secondaryText }]}>{tr('currentSeason','Current Season')}</Text>
           <Text style={[styles.aboutValue, { color: theme.text }]}>{currentSeason} 🍂</Text>
         </View>
+
+        <View style={[styles.aboutRow, { alignItems: 'center' }]}>
+          <Text style={[styles.aboutLabel, { color: theme.secondaryText }]}>{t ? t('session') : 'Session'}</Text>
+          {tokenExpiry ? (
+            <View style={[styles.expiryBadge, { backgroundColor: theme.cardBorder }]}> 
+              <Text style={[styles.expiryText, { color: theme.text }]}>{tokenExpiry <= new Date() ? (t ? t('expired') : 'Expired') : tokenExpiry.toLocaleString()}</Text>
+            </View>
+          ) : (
+            <Text style={[styles.aboutValue, { color: theme.secondaryText }]}>{tr('notSignedIn','Not signed in')}</Text>
+          )}
+        </View>
+
+        <View style={{ height: 12 }} />
+        <TouchableOpacity
+          style={[styles.logoutButton, { backgroundColor: '#e74c3c' }]}
+          onPress={async () => {
+            try {
+              await logout('manual');
+            } catch (_) { /* ignore */ }
+            try { navigation.navigate('Login'); } catch (_) {}
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={tr('logout','Log Out')}
+          accessibilityHint={tr('logout','Log Out')}
+          hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
+        >
+          <Text style={styles.logoutText}>{tr('logout','Log Out')}</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+const localStyles = StyleSheet.create({
   titleSection: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -297,11 +420,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   titleText: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 18,
     textAlign: 'center',
     paddingHorizontal: 20,
     paddingTop: 8,
@@ -321,11 +444,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: 'bold',
   },
   sectionSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     marginBottom: 16,
   },
   settingRow: {
@@ -486,4 +609,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  logoutButton: {
+    marginTop: 12,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  logoutText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  expiryBadge: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+  },
+  expiryText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
 });
+const styles = { ...commonStyles, ...localStyles };

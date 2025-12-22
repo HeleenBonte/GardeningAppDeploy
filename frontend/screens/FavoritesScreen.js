@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import AppHeader from '../components/AppHeader';
 import { useTheme } from '../themes/ThemeContext';
+import commonStyles from '../themes/styles';
 import { getUserFavoriteCrops, getUserFavoriteRecipes, removeFavoriteCrop, removeFavoriteRecipe } from '../config/api';
 import { getItem } from '../auth/storage';
+import FallbackImage from '../components/FallbackImage';
+import useTranslation from '../hooks/useTranslation';
 
 export default function FavoritesScreen() {
   const { theme } = useTheme();
@@ -17,11 +20,13 @@ export default function FavoritesScreen() {
   const [removingIds, setRemovingIds] = useState(new Set());
   const [userId, setUserId] = useState(null);
   const isFocused = useIsFocused();
+  const { t } = useTranslation();
 
   useEffect(() => {
     (async () => {
       const id = await getItem('user_id');
       if (!id) {
+        // if not logged in, navigate to Login (tab listener prevents landing on Favorites)
         navigation.navigate('Login');
         return;
       }
@@ -64,24 +69,38 @@ export default function FavoritesScreen() {
     const imageUri = item.image || item.imageURL || null;
     const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     let harvestText = '';
+    const harvestLabel = t ? t('favorites.harvestLabel') : 'Harvest:';
     if (item.harvestStart != null && item.harvestEnd != null) {
       const start = MONTHS[item.harvestStart] ?? item.harvestStart;
       const end = MONTHS[item.harvestEnd] ?? item.harvestEnd;
-      harvestText = `Harvest: ${start} - ${end}`;
-    } else if (item.harvestPeriod) harvestText = `Harvest: ${item.harvestPeriod}`;
+      harvestText = `${harvestLabel} ${start} - ${end}`;
+    } else if (item.harvestPeriod) harvestText = `${harvestLabel} ${item.harvestPeriod}`;
 
     return (
-      <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
-        {imageUri ? (
-          <Image source={{ uri: imageUri }} style={styles.cardImage} />
-        ) : null}
+      <View
+        accessible={true}
+        accessibilityLabel={`${title}${subtitle ? '. ' + subtitle : ''}${harvestText ? '. ' + harvestText : ''}`}
+        style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}
+      >
+        <FallbackImage
+          sourceUrl={imageUri}
+          type={mode === 'crops' ? 'crop' : 'recipe'}
+          id={item.id}
+          style={styles.cardImage}
+          accessibilityRole="image"
+          accessibilityLabel={title}
+        />
         <View style={styles.cardBodyRow}>
           <View style={styles.cardTextCol}>
-            <Text style={[styles.cardTitle, { color: theme.text }]} numberOfLines={1}>{title}</Text>
+            <Text accessibilityRole="header" accessibilityLabel={title} style={[styles.cardTitle, { color: theme.text }]} numberOfLines={1}>{title}</Text>
             {subtitle ? <Text style={[styles.cardSubtitle, { color: theme.secondaryText }]} numberOfLines={2}>{subtitle}</Text> : null}
             {harvestText ? <Text style={[styles.harvestText, { color: theme.secondaryText }]} numberOfLines={1}>{harvestText}</Text> : null}
             <TouchableOpacity
-              style={[styles.viewButton, { backgroundColor: theme.primary }]}
+              style={[styles.primaryButton, styles.buttonSpacing, { backgroundColor: theme.primary }]}
+              accessibilityRole="button"
+              accessibilityLabel={t ? t('crop.viewDetails') : 'View Details'}
+              accessibilityHint={t ? t('crop.viewDetailsA11yHint') : 'Open details for this item'}
+              hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
               onPress={() => {
                 if (mode === 'crops') {
                   navigation.navigate('Crops', { screen: 'CropDetail', params: { cropId: item.id, crop: item } });
@@ -90,16 +109,24 @@ export default function FavoritesScreen() {
                 }
               }}
             >
-              <Text style={styles.viewButtonText}>View Details</Text>
+              <Text style={styles.primaryButtonText}>{t ? t('crop.viewDetails') : 'View Details'}</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.cardRightCol}>
             <TouchableOpacity
               style={[styles.heartOverlay, { backgroundColor: theme.primary }]}
+              accessibilityRole="button"
+              accessibilityState={{ busy: removingIds.has(item.id) }}
+              accessibilityLabel={removingIds.has(item.id) ? (t ? t('recipe.saving') : 'Saving…') : (t ? t('recipe.removeFromFavorites') : 'Remove from favorites')}
+              accessibilityHint={t ? t('favorites.removeA11yHint') : 'Removes this item from your favorites'}
+              hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
               disabled={removingIds.has(item.id)}
               onPress={async () => {
                 const id = item.id;
-                if (!userId) return;
+                if (!userId) {
+                  navigation.navigate('Login');
+                  return;
+                }
                 setRemovingIds(prev => new Set(prev).add(id));
                 try {
                   if (mode === 'crops') await removeFavoriteCrop(userId, id);
@@ -119,7 +146,7 @@ export default function FavoritesScreen() {
               {removingIds.has(item.id) ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Ionicons name="heart" size={14} color="#fff" />
+                <Ionicons name="heart" size={14} color="#fff" accessible={false} />
               )}
             </TouchableOpacity>
           </View>
@@ -132,11 +159,25 @@ export default function FavoritesScreen() {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <AppHeader />
       <View style={[styles.header, { borderBottomColor: theme.cardBorder }]}>
-        <TouchableOpacity onPress={() => setMode('crops')} style={[styles.segment, mode === 'crops' ? { backgroundColor: theme.primary } : { backgroundColor: theme.imagePlaceholderBg }]}>
-          <Text style={[styles.segmentText, mode === 'crops' ? { color: '#fff' } : { color: theme.text }]}>Crops</Text>
+        <TouchableOpacity
+          onPress={() => setMode('crops')}
+          accessibilityRole="button"
+          accessibilityState={{ selected: mode === 'crops' }}
+          accessibilityLabel={t ? t('favorites.crops') : 'Crops'}
+          accessibilityHint={t ? t('favorites.crops') : 'Show favorite crops'}
+          style={[styles.segment, mode === 'crops' ? { backgroundColor: theme.primary } : { backgroundColor: theme.imagePlaceholderBg }]}
+        >
+          <Text style={[styles.segmentText, mode === 'crops' ? { color: '#fff' } : { color: theme.text }]}>{t ? t('favorites.crops') : 'Crops'}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => setMode('recipes')} style={[styles.segment, mode === 'recipes' ? { backgroundColor: theme.primary } : { backgroundColor: theme.imagePlaceholderBg }]}>
-          <Text style={[styles.segmentText, mode === 'recipes' ? { color: '#fff' } : { color: theme.text }]}>Recipes</Text>
+        <TouchableOpacity
+          onPress={() => setMode('recipes')}
+          accessibilityRole="button"
+          accessibilityState={{ selected: mode === 'recipes' }}
+          accessibilityLabel={t ? t('favorites.recipes') : 'Recipes'}
+          accessibilityHint={t ? t('favorites.recipes') : 'Show favorite recipes'}
+          style={[styles.segment, mode === 'recipes' ? { backgroundColor: theme.primary } : { backgroundColor: theme.imagePlaceholderBg }]}
+        >
+          <Text style={[styles.segmentText, mode === 'recipes' ? { color: '#fff' } : { color: theme.text }]}>{t ? t('favorites.recipes') : 'Recipes'}</Text>
         </TouchableOpacity>
       </View>
 
@@ -152,27 +193,20 @@ export default function FavoritesScreen() {
           renderItem={renderItem}
           refreshing={refreshing}
           onRefresh={() => loadItems(false)}
-          ListEmptyComponent={<Text style={{ color: theme.secondaryText, textAlign: 'center', marginTop: 24 }}>No favorites yet.</Text>}
+          ListEmptyComponent={<Text style={{ color: theme.secondaryText, textAlign: 'center', marginTop: 24 }}>{t ? t('favorites.noFavorites') : 'No favorites yet.'}</Text>}
         />
       )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: { flexDirection: 'row', padding: 12, borderBottomWidth: 1 },
-  segment: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center', marginHorizontal: 6 },
-  segmentText: { fontWeight: '700' },
-  card: { padding: 12, borderRadius: 10, borderWidth: 1, marginBottom: 10 },
-  cardTitle: { fontSize: 16, fontWeight: '700' },
-  cardSubtitle: { fontSize: 13, marginTop: 4 },
-  cardImage: { width: '100%', height: 140, borderTopLeftRadius: 10, borderTopRightRadius: 10 },
+const localStyles = StyleSheet.create({
   cardBodyRow: { flexDirection: 'row', padding: 12, alignItems: 'flex-start' },
   cardTextCol: { flex: 1 },
   cardRightCol: { width: 40, alignItems: 'flex-end', paddingLeft: 8 },
-  viewButton: { marginTop: 8, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, alignSelf: 'flex-start' },
-  viewButtonText: { color: '#fff', fontWeight: '700' },
-  harvestText: { fontSize: 12, marginTop: 6 },
-  heartOverlay: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  cardTitle: { marginBottom: 6 },
+  cardSubtitle: { marginTop: 4 },
+  buttonSpacing: { marginTop: 10 },
+  harvestText: { fontSize: 13, marginTop: 6 },
 });
+const styles = { ...commonStyles, ...localStyles };

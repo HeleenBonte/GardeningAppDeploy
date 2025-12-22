@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import { getJwtToken } from '../auth/storage';
+import { getJwtToken, logout } from '../auth/storage';
 
 const PROD_URL = 'https://api.yourdomain.com';
 
@@ -93,6 +93,10 @@ async function request(path, { method = 'GET', body, headers = {} } = {}) {
         const err = new Error(finalMessage);
         err.status = res.status;
         err.raw = parsed ?? text;
+        // If unauthorized, trigger logout to clear local state
+        if (res.status === 401) {
+            try { await logout('expired'); } catch (_) { /* ignore */ }
+        }
         throw err;
     }
     if (res.status === 204) return null;
@@ -117,6 +121,11 @@ export const getRecipes = async () => {
 
 export const getRecipeById = async (id) => {
     return await request(`/api/recipes/${id}`);
+};
+
+// Get user by ID (returns UserResponse with userName)
+export const getUserById = async (id) => {
+    return await request(`/api/users/${id}`);
 };
 
 // User favorites
@@ -171,6 +180,12 @@ export const getIngredients = async () => {
     return Array.isArray(res) ? res : (res?.content ?? []);
 };
 
+// Get recipes by ingredient id (returns array or page)
+export const getRecipesByIngredient = async (ingrId) => {
+    const res = await request(`/api/recipes/ingredient/${ingrId}?size=1000`);
+    return Array.isArray(res) ? res : (res?.content ?? []);
+};
+
 // Authentication
 export const login = async (email, password) => {
     return await request('/api/auth/login', { method: 'POST', body: { email, password } });
@@ -178,4 +193,23 @@ export const login = async (email, password) => {
 
 export const register = async (name, email, password) => {
     return await request('/api/auth/register', { method: 'POST', body: { name, email, password } });
+};
+
+// Update user by id
+export const updateUser = async (id, body) => {
+    // Explicitly attach JWT for this call (request() also attaches JWT automatically,
+    // but including it here ensures the header is present when calling directly).
+    try {
+        const token = await getJwtToken();
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        return await request(`/api/users/${id}`, { method: 'PUT', body, headers });
+    } catch (e) {
+        // If reading token fails, still attempt the request without explicit header
+        return await request(`/api/users/${id}`, { method: 'PUT', body });
+    }
+};
+
+// Delete user by id
+export const deleteUser = async (id) => {
+    return await request(`/api/users/${id}`, { method: 'DELETE' });
 };

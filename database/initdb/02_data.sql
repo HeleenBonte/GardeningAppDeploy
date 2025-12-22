@@ -53,6 +53,7 @@ INSERT INTO ingredient_measurements (id, measurement_name) VALUES (2, 'millilite
 INSERT INTO ingredient_measurements (id, measurement_name) VALUES (3, 'pieces') ON CONFLICT (id) DO UPDATE SET measurement_name = EXCLUDED.measurement_name;
 INSERT INTO ingredient_measurements (id, measurement_name) VALUES (4, 'tbsp') ON CONFLICT (id) DO UPDATE SET measurement_name = EXCLUDED.measurement_name;
 INSERT INTO ingredient_measurements (id, measurement_name) VALUES (5, 'tsp') ON CONFLICT (id) DO UPDATE SET measurement_name = EXCLUDED.measurement_name;
+INSERT INTO ingredient_measurements (id, measurement_name) VALUES (6, 'kilograms') ON CONFLICT (id) DO UPDATE SET measurement_name = EXCLUDED.measurement_name;
 
 -- Ingredients
 INSERT INTO ingredients (id, ingredient_name, crop_id) VALUES (1, 'Tomato', 1) ON CONFLICT (id) DO UPDATE SET ingredient_name = EXCLUDED.ingredient_name, crop_id = EXCLUDED.crop_id;

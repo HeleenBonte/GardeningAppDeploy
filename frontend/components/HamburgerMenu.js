@@ -2,10 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Modal, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../themes/ThemeContext';
-import { getJwtToken, deleteJwtToken } from '../auth/storage';
+import useTranslation from '../hooks/useTranslation';
+import { getJwtToken, deleteJwtToken, logout } from '../auth/storage';
 
 export default function HamburgerMenu({ visible, onClose, onNavigate, onToggleTheme, isDarkMode, onLogout }) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
@@ -26,12 +28,11 @@ export default function HamburgerMenu({ visible, onClose, onNavigate, onToggleTh
 
   async function handleLogout() {
     try {
-      await deleteJwtToken();
+      await logout('manual');
     } catch (e) {
       // ignore
     }
     setIsLoggedIn(false);
-    if (onLogout) onLogout();
     onClose();
     if (onNavigate) onNavigate('Main', { screen: 'HomeTab' });
   }
@@ -39,46 +40,58 @@ export default function HamburgerMenu({ visible, onClose, onNavigate, onToggleTh
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={onClose}>
-        <View style={[styles.menuContainer, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+        <View accessibilityViewIsModal={true} accessible={true} style={[styles.menuContainer, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
           <TouchableOpacity
             style={[styles.menuItem, { borderBottomColor: theme.cardBorder }]}
             onPress={() => { onClose(); onNavigate && onNavigate('Settings'); }}
+            accessibilityRole="button"
+            accessibilityLabel={t ? t('settings') : 'Settings'}
+            accessibilityHint={t ? t('settings') + ' ' : 'Opens settings'}
           >
-            <Ionicons name="settings-outline" size={24} color={theme.text} />
-            <Text style={[styles.menuItemText, { color: theme.text }]}>Settings</Text>
+            <Ionicons name="settings-outline" size={24} color={theme.text} accessible={false} />
+            <Text style={[styles.menuItemText, { color: theme.text }]}>{t ? t('settings') : 'Settings'}</Text>
           </TouchableOpacity>
 
           {isLoggedIn ? (
             <>
-              <TouchableOpacity
-                style={[styles.menuItem, { borderBottomColor: theme.cardBorder }]}
-                onPress={() => { onClose(); onNavigate && onNavigate('Settings'); }}
-              >
-                <Ionicons name="person-circle-outline" size={24} color={theme.text} />
-                <Text style={[styles.menuItemText, { color: theme.text }]}>Account</Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.menuItem, { borderBottomColor: theme.cardBorder }]}
+                  onPress={() => { onClose(); onNavigate && onNavigate('Account'); }}
+                  accessibilityRole="button"
+                  accessibilityLabel={t ? t('account.title') : 'Account'}
+                  accessibilityHint={t ? t('account.title') + ' ' : 'Opens account screen'}
+                >
+                  <Ionicons name="person-circle-outline" size={24} color={theme.text} accessible={false} />
+                  <Text style={[styles.menuItemText, { color: theme.text }]}>{t ? t('account.title') : 'Account'}</Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.menuItem, { borderBottomColor: theme.cardBorder }]}
-                onPress={handleLogout}
-              >
-                <Ionicons name="log-out-outline" size={24} color={theme.text} />
-                <Text style={[styles.menuItemText, { color: theme.text }]}>Log Out</Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.menuItem, { borderBottomColor: theme.cardBorder }]}
+                  onPress={handleLogout}
+                  accessibilityRole="button"
+                  accessibilityLabel={t ? t('logout') : 'Log Out'}
+                  accessibilityHint={t ? t('logout') + ' ' : 'Logs you out'}
+                >
+                  <Ionicons name="log-out-outline" size={24} color={theme.text} accessible={false} />
+                  <Text style={[styles.menuItemText, { color: theme.text }]}>{t ? t('logout') : 'Log Out'}</Text>
+                </TouchableOpacity>
             </>
           ) : (
             <TouchableOpacity
               style={[styles.menuItem, { borderBottomColor: theme.cardBorder }]}
               onPress={() => { onClose(); onNavigate && onNavigate('Login'); }}
+              accessibilityRole="button"
+              accessibilityLabel={t ? `${t('login.signIn')} / ${t('login.signUp')}` : 'Login / Sign Up'}
+              accessibilityHint={t ? t('login.signIn') + ' ' : 'Opens login screen'}
             >
-              <Ionicons name="log-in-outline" size={24} color={theme.text} />
-              <Text style={[styles.menuItemText, { color: theme.text }]}>Login / Sign Up</Text>
+              <Ionicons name="log-in-outline" size={24} color={theme.text} accessible={false} />
+              <Text style={[styles.menuItemText, { color: theme.text }]}>{`${t ? t('login.signIn') : 'Login'} / ${t ? t('login.signUp') : 'Sign Up'}`}</Text>
             </TouchableOpacity>
           )}
 
-          <TouchableOpacity style={styles.menuItem} onPress={onClose}>
-            <Ionicons name="close-outline" size={24} color={theme.secondaryText} />
-            <Text style={[styles.menuItemText, { color: theme.secondaryText }]}>Close</Text>
+          <TouchableOpacity style={styles.menuItem} onPress={onClose} accessibilityRole="button" accessibilityLabel={t ? t('close') : 'Close'} accessibilityHint={t ? t('close') + ' ' : 'Closes menu'}>
+            <Ionicons name="close-outline" size={24} color={theme.secondaryText} accessible={false} />
+            <Text style={[styles.menuItemText, { color: theme.secondaryText }]}>{t ? t('close') : 'Close'}</Text>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
