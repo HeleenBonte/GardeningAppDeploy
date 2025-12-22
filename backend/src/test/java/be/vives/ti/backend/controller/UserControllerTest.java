@@ -156,13 +156,20 @@ public class UserControllerTest {
     public void updateUser_returnsOk() throws Exception {
         var request = new UpdateUserRequest("newname", "new@example.com");
         var updated = new UserResponse(3, "newname", "new@example.com", "USER");
-        when(getUserService().update(3, request)).thenReturn(updated);
+        // use matchers so the deserialized request object matches the stub
+        when(getUserService().update(org.mockito.ArgumentMatchers.eq(3), any(UpdateUserRequest.class))).thenReturn(updated);
+        // stub jwt generation (controller now returns AuthResponse with token)
+        when(TestConfig.jwtUtilMock.generateToken(updated.getUserEmail(), "USER")).thenReturn("newtoken");
 
         mockMvc.perform(put("/api/users/{id}", 3)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.userName").value("newname"));
+                // controller now returns AuthResponse with fields: id, token, email, name, role
+                .andExpect(jsonPath("$.name").value("newname"))
+                .andExpect(jsonPath("$.token").value("newtoken"))
+                .andExpect(jsonPath("$.id").value(3))
+                .andExpect(jsonPath("$.email").value("new@example.com"));
     }
 
     @Test

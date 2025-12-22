@@ -22,7 +22,7 @@ public record CreateRecipeRequest(
         String prepTime,
         @NotBlank(message = "Cooktime is required")
         String cookTime,
-        @NotBlank(message = "Image URL is required")
+        // Image URL is optional for mobile clients; allow null/empty values
         String imageURL,
         @NotNull(message = "Course id is required")
         Integer courseId,

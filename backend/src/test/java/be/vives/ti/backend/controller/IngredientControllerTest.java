@@ -51,8 +51,8 @@ public class IngredientControllerTest {
     @DisplayName("GET /api/ingredients - when ingredients exist returns 200 and page")
     void getAllIngredients_returnsPage() throws Exception {
         // arrange
-        IngredientResponse i1 = new IngredientResponse(1, "Sugar");
-        IngredientResponse i2 = new IngredientResponse(2, "Salt");
+        IngredientResponse i1 = new IngredientResponse(1, "Sugar", null);
+        IngredientResponse i2 = new IngredientResponse(2, "Salt", null);
         doReturn(new PageImpl<>(List.of(i1, i2))).when(ingredientService).findAll(Mockito.any(Pageable.class));
 
         // act & assert
@@ -78,7 +78,7 @@ public class IngredientControllerTest {
     @Test
     @DisplayName("POST /api/ingredients - when valid request returns 201 and created resource")
     void createIngredient_returnsCreated() throws Exception {
-        IngredientResponse created = new IngredientResponse(10, "Pepper");
+        IngredientResponse created = new IngredientResponse(10, "Pepper", null);
         doReturn(created).when(ingredientService).create(Mockito.any(CreateIngredientRequest.class));
 
         String json = "{\"name\":\"Pepper\",\"cropId\":null}";

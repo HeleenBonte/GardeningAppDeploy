@@ -15,8 +15,8 @@ MERGE INTO crops (id, cropname, sowing_start, sowing_end, planting_start, planti
 
 -- Categories
 -- Categories
-MERGE INTO categories (id, category_name) KEY(id) VALUES (1, '10');
-MERGE INTO categories (id, category_name) KEY(id) VALUES (2, '20');
+MERGE INTO categories (id, category_name) KEY(id) VALUES (1, 'breakfast');
+MERGE INTO categories (id, category_name) KEY(id) VALUES (2, 'dinner');
 
 -- Courses
 -- Courses

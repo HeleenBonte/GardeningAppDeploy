@@ -108,6 +108,14 @@ public class RecipeService {
         return recipeMapper.toResponse(savedRecipe);
     }
 
+    public Page<RecipeResponse> findByIngredientId(int ingredientID, Pageable pageable){
+        log.debug("Finding recipes by ingredient id: {} with pagination: {}", ingredientID, pageable);
+        // Note: The custom query in the repository does not support pagination directly.
+        // We fetch all matching recipes and then create a Page object manually.
+        Page<Recipe> recipes = recipeRepository.findByIngredientID(ingredientID, pageable);
+        return recipes.map(recipeMapper::toResponse);
+    }
+
     public Optional<RecipeResponse> update(int id, UpdateRecipeRequest request){
         log.debug("Updating recipe with id: {}", id);
         return recipeRepository.findById(id)

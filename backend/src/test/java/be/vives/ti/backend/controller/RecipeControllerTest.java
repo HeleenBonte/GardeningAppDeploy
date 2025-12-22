@@ -114,8 +114,8 @@ public class RecipeControllerTest {
     public void getByIngredientId_returnsOk() throws Exception {
         var recipe = new RecipeResponse(5, "pasta", 1, "desc", "15m", "10m", "img", 1, 1, List.of(), List.of());
         Pageable pageable = PageRequest.of(0,20);
-        // controller also uses findByCatId for ingredient id
-        when(getRecipeService().findByCatId(eq(7), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(recipe), pageable, 1));
+        // controller also uses findByIngredientId for ingredient id
+        when(getRecipeService().findByIngredientId(eq(7), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(recipe), pageable, 1));
 
         mockMvc.perform(get("/api/recipes/ingredient/{ingrId}", 7).param("page","0").param("size","20"))
                 .andExpect(status().isOk())

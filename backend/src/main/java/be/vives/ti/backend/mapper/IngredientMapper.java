@@ -11,5 +11,6 @@ public interface IngredientMapper {
     @Mapping(target = "id", ignore = true)
     Ingredient toEntity(CreateIngredientRequest request);
 
+    @Mapping(target = "cropId", source = "crop.id")
     IngredientResponse toResponse(Ingredient ingredient);
 }

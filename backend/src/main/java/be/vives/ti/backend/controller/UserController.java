@@ -1,11 +1,13 @@
 package be.vives.ti.backend.controller;
 
 
+import be.vives.ti.backend.dto.AuthResponse;
 import be.vives.ti.backend.dto.request.CreateUserRequest;
 import be.vives.ti.backend.dto.request.UpdateUserRequest;
 import be.vives.ti.backend.dto.response.CropResponse;
 import be.vives.ti.backend.dto.response.RecipeResponse;
 import be.vives.ti.backend.dto.response.UserResponse;
+import be.vives.ti.backend.security.JwtUtil;
 import be.vives.ti.backend.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -36,7 +38,9 @@ import java.util.List;
 public class UserController {
     private static final Logger log = LoggerFactory.getLogger(UserController.class);
     private final UserService userService;
-    public UserController(UserService userService){
+    private final JwtUtil jwtUtil;
+    public UserController(UserService userService, JwtUtil jwtUtil) {
+        this.jwtUtil = jwtUtil;
         this.userService = userService;
     }
 
@@ -322,12 +326,20 @@ public class UserController {
                     description = "User not found"
             )
     })
-    public ResponseEntity<UserResponse> updateUser(
+    public ResponseEntity<AuthResponse> updateUser(
             @Parameter(description = "User ID", required = true) @PathVariable int id,
             @Valid @RequestBody UpdateUserRequest request){
         log.debug("PUT /api/users/{} - {}", id, request);
         UserResponse updatedUser = userService.update(id, request);
-        return ResponseEntity.ok(updatedUser);
+        String newToken = jwtUtil.generateToken(updatedUser.getUserEmail(), "USER");
+        AuthResponse response = new AuthResponse(
+                updatedUser.getId(),
+                newToken,
+                updatedUser.getUserEmail(),
+                updatedUser.getUserName(),
+                updatedUser.getRole()
+        );
+        return ResponseEntity.ok(response);
     }
 
     //DELETE

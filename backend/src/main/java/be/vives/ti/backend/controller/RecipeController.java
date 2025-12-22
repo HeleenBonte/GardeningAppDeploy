@@ -154,7 +154,7 @@ public class RecipeController {
     })
     public ResponseEntity<Page<RecipeResponse>> getByIngredientId(@Parameter(description = "Ingredient ID", required = true) @PathVariable int ingrId,@ParameterObject Pageable pageable){
         log.debug("GET /api/recipes/ingredient/{}", ingrId);
-        Page<RecipeResponse> recipes = recipeService.findByCatId(ingrId, pageable);
+        Page<RecipeResponse> recipes = recipeService.findByIngredientId(ingrId, pageable);
         return ResponseEntity.ok(recipes);
     }
     //POST ADD NEW RECIPE
