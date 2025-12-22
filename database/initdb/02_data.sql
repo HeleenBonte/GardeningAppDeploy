@@ -28,17 +28,31 @@ VALUES (3, 'Carrot', 2, 4, 3, 5, 7, 10, FALSE, FALSE, TRUE, FALSE, 'Root vegetab
 ON CONFLICT (id) DO UPDATE SET cropname = EXCLUDED.cropname, sowing_start = EXCLUDED.sowing_start, sowing_end = EXCLUDED.sowing_end, planting_start = EXCLUDED.planting_start, planting_end = EXCLUDED.planting_end, harvest_start = EXCLUDED.harvest_start, harvest_end = EXCLUDED.harvest_end, in_house = EXCLUDED.in_house, in_pots = EXCLUDED.in_pots, in_garden = EXCLUDED.in_garden, in_greenhouse = EXCLUDED.in_greenhouse, crop_description = EXCLUDED.crop_description, crop_tips = EXCLUDED.crop_tips, image = EXCLUDED.image;
 
 -- Categories
-INSERT INTO categories (id, category_name) VALUES (1, '10') ON CONFLICT (id) DO UPDATE SET category_name = EXCLUDED.category_name;
-INSERT INTO categories (id, category_name) VALUES (2, '20') ON CONFLICT (id) DO UPDATE SET category_name = EXCLUDED.category_name;
+INSERT INTO categories (id, category_name) VALUES (1, 'Vegan') ON CONFLICT (id) DO UPDATE SET category_name = EXCLUDED.category_name;
+INSERT INTO categories (id, category_name) VALUES (2, 'Vegetarian') ON CONFLICT (id) DO UPDATE SET category_name = EXCLUDED.category_name;
+INSERT INTO categories (id, category_name) VALUES (3, 'Meat') ON CONFLICT (id) DO UPDATE SET category_name = EXCLUDED.category_name;
+INSERT INTO categories (id, category_name) VALUES (4, 'Poultry') ON CONFLICT (id) DO UPDATE SET category_name = EXCLUDED.category_name;
+INSERT INTO categories (id, category_name) VALUES (5, 'Seafood') ON CONFLICT (id) DO UPDATE SET category_name = EXCLUDED.category_name;
+INSERT INTO categories (id, category_name) VALUES (6, 'Dairy') ON CONFLICT (id) DO UPDATE SET category_name = EXCLUDED.category_name;
+INSERT INTO categories (id, category_name) VALUES (7, 'Gluten-Free') ON CONFLICT (id) DO UPDATE SET category_name = EXCLUDED.category_name;
+INSERT INTO categories (id, category_name) VALUES (8, 'Fish') ON CONFLICT (id) DO UPDATE SET category_name = EXCLUDED.category_name;
 
 -- Courses
 INSERT INTO courses (id, course_name) VALUES (1, 'Main') ON CONFLICT (id) DO UPDATE SET course_name = EXCLUDED.course_name;
 INSERT INTO courses (id, course_name) VALUES (2, 'Starter') ON CONFLICT (id) DO UPDATE SET course_name = EXCLUDED.course_name;
+INSERT INTO courses (id, course_name) VALUES (3, 'Breakfast') ON CONFLICT (id) DO UPDATE SET course_name = EXCLUDED.course_name;
+INSERT INTO courses (id, course_name) VALUES (4, 'Lunch') ON CONFLICT (id) DO UPDATE SET course_name = EXCLUDED.course_name;
+INSERT INTO courses (id, course_name) VALUES (5, 'Dinner') ON CONFLICT (id) DO UPDATE SET course_name = EXCLUDED.course_name;
+INSERT INTO courses (id, course_name) VALUES (6, 'Snack') ON CONFLICT (id) DO UPDATE SET course_name = EXCLUDED.course_name;
+INSERT INTO courses (id, course_name) VALUES (7, 'Dessert') ON CONFLICT (id) DO UPDATE SET course_name = EXCLUDED.course_name;
+INSERT INTO courses (id, course_name) VALUES (8, 'Other') ON CONFLICT (id) DO UPDATE SET course_name = EXCLUDED.course_name;
 
 -- Ingredient measurements
 INSERT INTO ingredient_measurements (id, measurement_name) VALUES (1, 'grams') ON CONFLICT (id) DO UPDATE SET measurement_name = EXCLUDED.measurement_name;
-INSERT INTO ingredient_measurements (id, measurement_name) VALUES (2, 'cups') ON CONFLICT (id) DO UPDATE SET measurement_name = EXCLUDED.measurement_name;
+INSERT INTO ingredient_measurements (id, measurement_name) VALUES (2, 'milliliters') ON CONFLICT (id) DO UPDATE SET measurement_name = EXCLUDED.measurement_name;
 INSERT INTO ingredient_measurements (id, measurement_name) VALUES (3, 'pieces') ON CONFLICT (id) DO UPDATE SET measurement_name = EXCLUDED.measurement_name;
+INSERT INTO ingredient_measurements (id, measurement_name) VALUES (4, 'tbsp') ON CONFLICT (id) DO UPDATE SET measurement_name = EXCLUDED.measurement_name;
+INSERT INTO ingredient_measurements (id, measurement_name) VALUES (5, 'tsp') ON CONFLICT (id) DO UPDATE SET measurement_name = EXCLUDED.measurement_name;
 
 -- Ingredients
 INSERT INTO ingredients (id, ingredient_name, crop_id) VALUES (1, 'Tomato', 1) ON CONFLICT (id) DO UPDATE SET ingredient_name = EXCLUDED.ingredient_name, crop_id = EXCLUDED.crop_id;
