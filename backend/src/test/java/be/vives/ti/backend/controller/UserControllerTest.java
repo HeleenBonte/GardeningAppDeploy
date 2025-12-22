@@ -6,8 +6,10 @@ import be.vives.ti.backend.dto.request.CreateUserRequest;
 import be.vives.ti.backend.dto.request.UpdateUserRequest;
 import be.vives.ti.backend.dto.response.CropResponse;
 import be.vives.ti.backend.dto.response.RecipeResponse;
+import be.vives.ti.backend.dto.response.UserResponse;
 import be.vives.ti.backend.exceptions.GlobalExceptionHandler;
 import be.vives.ti.backend.exceptions.ResourceNotFoundException;
+import be.vives.ti.backend.security.JwtUtil;
 import be.vives.ti.backend.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -29,6 +31,7 @@ import java.util.List;
 
 import org.mockito.Mockito;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -58,7 +61,7 @@ public class UserControllerTest {
     @Test
     public void getUser_returnsOk() throws Exception {
         var user = new SimpleUserResponse(1, "john", "john@example.com", "USER");
-        when(getUserService().findById(1)).thenReturn(new be.vives.ti.backend.dto.response.UserResponse(user.id(), user.userName(), user.userEmail(), user.role()));
+        when(getUserService().findById(1)).thenReturn(new UserResponse(user.id(), user.userName(), user.userEmail(), user.role()));
 
         mockMvc.perform(get("/api/users/{id}", 1))
                 .andExpect(status().isOk())
@@ -73,7 +76,7 @@ public class UserControllerTest {
 
     @Test
     public void getAllUsers_returnsOk() throws Exception {
-        var user = new be.vives.ti.backend.dto.response.UserResponse(2, "jane", "jane@example.com", "ADMIN");
+        var user = new UserResponse(2, "jane", "jane@example.com", "ADMIN");
         Pageable pageable = PageRequest.of(0, 20);
         when(getUserService().findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(user), pageable, 1));
 
@@ -85,14 +88,14 @@ public class UserControllerTest {
     @Test
     public void createUser_returnsCreated() throws Exception {
         var request = new CreateUserRequest("newuser", "new@example.com", "password123");
-        var created = new be.vives.ti.backend.dto.response.UserResponse(5, "newuser", "new@example.com", "USER");
+        var created = new UserResponse(5, "newuser", "new@example.com", "USER");
         when(getUserService().create(any(CreateUserRequest.class))).thenReturn(created);
 
         mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(header().string("Location", org.hamcrest.Matchers.containsString("/api/users/5")))
+                .andExpect(header().string("Location", containsString("/api/users/5")))
                 .andExpect(jsonPath("$.id").value(5))
                 .andExpect(jsonPath("$.userName").value("newuser"));
     }
@@ -152,7 +155,7 @@ public class UserControllerTest {
     @Test
     public void updateUser_returnsOk() throws Exception {
         var request = new UpdateUserRequest("newname", "new@example.com");
-        var updated = new be.vives.ti.backend.dto.response.UserResponse(3, "newname", "new@example.com", "USER");
+        var updated = new UserResponse(3, "newname", "new@example.com", "USER");
         when(getUserService().update(3, request)).thenReturn(updated);
 
         mockMvc.perform(put("/api/users/{id}", 3)
@@ -178,7 +181,7 @@ public class UserControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("User with ID 99 not found")));
+                .andExpect(jsonPath("$.message").value(containsString("User with ID 99 not found")));
     }
 
     @Test
@@ -192,7 +195,7 @@ public class UserControllerTest {
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.status").value(500))
-                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("An unexpected error occurred")));
+                .andExpect(jsonPath("$.message").value(containsString("An unexpected error occurred")));
     }
 
 
@@ -202,7 +205,7 @@ public class UserControllerTest {
 
         // keep references so tests can access and stub the mocks
         static UserService userServiceMock = Mockito.mock(UserService.class);
-        static be.vives.ti.backend.security.JwtUtil jwtUtilMock = Mockito.mock(be.vives.ti.backend.security.JwtUtil.class);
+        static JwtUtil jwtUtilMock = Mockito.mock(JwtUtil.class);
         static UserDetailsService userDetailsServiceMock = Mockito.mock(UserDetailsService.class);
 
         @Bean
@@ -211,7 +214,7 @@ public class UserControllerTest {
         }
 
         @Bean
-        public be.vives.ti.backend.security.JwtUtil jwtUtil() {
+        public JwtUtil jwtUtil() {
             return jwtUtilMock;
         }
 
