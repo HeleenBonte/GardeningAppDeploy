@@ -5,7 +5,6 @@ import be.vives.ti.backend.dto.response.IngredientResponse;
 import be.vives.ti.backend.exceptions.IngredientException;
 import be.vives.ti.backend.mapper.IngredientMapper;
 import be.vives.ti.backend.model.Ingredient;
-import be.vives.ti.backend.repository.CropRepository;
 import be.vives.ti.backend.repository.IngredientRepository;
 import be.vives.ti.backend.repository.RecipeRepository;
 import jakarta.transaction.Transactional;
@@ -54,12 +53,13 @@ public class IngredientService {
     public boolean delete(int id) {
         log.debug("Deleting ingredient with id {}", id);
         if(!ingredientRepository.existsById(id)) {
-        log.warn("Ingredient with id {} not found for deletion", id);
-        return false;
+            log.warn("Ingredient with id {} not found for deletion", id);
+            return false;
         }
         if(!recipeRepository.findByIngredientID(id).isEmpty()) {
             log.warn("Ingredient with id {} is being used in at least one recipe", id);
-            return false;        }
+            return false;
+        }
         ingredientRepository.deleteById(id);
         return true;
     }

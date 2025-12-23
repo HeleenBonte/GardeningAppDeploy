@@ -2,11 +2,8 @@ package be.vives.ti.backend.model;
 
 
 import jakarta.persistence.*;
-import org.hibernate.annotations.NotFound;
-import org.hibernate.annotations.NotFoundAction;
 
 import java.time.Month;
-import java.util.Set;
 
 @Entity
 @Table(name = "crops")

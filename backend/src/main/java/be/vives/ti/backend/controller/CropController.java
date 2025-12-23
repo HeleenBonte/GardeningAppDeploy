@@ -4,6 +4,7 @@ package be.vives.ti.backend.controller;
 import be.vives.ti.backend.dto.request.CreateCropRequest;
 import be.vives.ti.backend.dto.request.UpdateCropRequest;
 import be.vives.ti.backend.dto.response.CropResponse;
+import be.vives.ti.backend.dto.response.ErrorResponse;
 import be.vives.ti.backend.service.CropService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -50,7 +51,7 @@ public class CropController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved list of crops", content = @Content(schema = @Schema(implementation = Page.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid pagination parameters supplied")
+            @ApiResponse(responseCode = "400", description = "Invalid pagination parameters supplied", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<?> getAll(@ParameterObject Pageable pageable) {
         log.debug("GET /api/crops");
@@ -69,6 +70,11 @@ public class CropController {
             @ApiResponse(
                     responseCode = "200",
                     description = "Successfully retrieved recipe"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Crop not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
     public ResponseEntity<?> getById(
@@ -143,19 +149,23 @@ public class CropController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Invalid request data"
+                    description = "Invalid request data",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized - JWT token missing or invalid"
+                    description = "Unauthorized - JWT token missing or invalid",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - ADMIN role required"
+                    description = "Forbidden - ADMIN role required",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Crop not found"
+                    description = "Crop not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
     public ResponseEntity<CropResponse> updateCrop(
@@ -183,11 +193,13 @@ public class CropController {
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized - JWT token missing or invalid"
+                    description = "Unauthorized - JWT token missing or invalid",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - ADMIN role required"
+                    description = "Forbidden - ADMIN role required",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
     public ResponseEntity<Void> deleteCrop(

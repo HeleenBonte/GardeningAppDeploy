@@ -1,7 +1,6 @@
 package be.vives.ti.backend.model;
 
 import jakarta.persistence.*;
-import jakarta.persistence.criteria.CriteriaBuilder;
 
 import java.util.ArrayList;
 import java.util.HashSet;

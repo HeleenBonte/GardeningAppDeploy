@@ -92,6 +92,27 @@ public class GlobalExceptionHandler {
                 .body(errorResponse);
     }
 
+    @ExceptionHandler(GardeningappException.class)
+    public ResponseEntity<ErrorResponse> handleGardeningappException(
+            GardeningappException ex,
+            WebRequest request) {
+
+        log.warn("Application error: {}", ex.getMessage());
+
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad Request",
+                ex.getMessage(),
+                extractPath(request),
+                null
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(errorResponse);
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(
             HttpMessageNotReadableException ex,
@@ -145,7 +166,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             IllegalArgumentException.class,
             IllegalStateException.class,
-            NullPointerException.class
+            NullPointerException.class,
+            RuntimeException.class
     })
     public ResponseEntity<ErrorResponse> handleGenericException(
             Exception ex,

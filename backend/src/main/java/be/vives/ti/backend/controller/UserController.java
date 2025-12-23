@@ -5,6 +5,7 @@ import be.vives.ti.backend.dto.AuthResponse;
 import be.vives.ti.backend.dto.request.CreateUserRequest;
 import be.vives.ti.backend.dto.request.UpdateUserRequest;
 import be.vives.ti.backend.dto.response.CropResponse;
+import be.vives.ti.backend.dto.response.ErrorResponse;
 import be.vives.ti.backend.dto.response.RecipeResponse;
 import be.vives.ti.backend.dto.response.UserResponse;
 import be.vives.ti.backend.security.JwtUtil;
@@ -65,7 +66,8 @@ public class UserController {
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized - JWT token missing or invalid"
+                    description = "Unauthorized - JWT token missing or invalid",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
     public ResponseEntity<Page<UserResponse>> getAllUsers(@ParameterObject Pageable pageable){
@@ -87,11 +89,13 @@ public class UserController {
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized - JWT token missing or invalid"
+                    description = "Unauthorized - JWT token missing or invalid",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "User not found"
+                    description = "User not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
     public ResponseEntity<UserResponse> getUser(@Parameter(description = "User ID", required = true) @PathVariable int id){
@@ -113,11 +117,13 @@ public class UserController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Invalid user data"
+                    description = "Invalid user data",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized - JWT token missing or invalid"
+                    description = "Unauthorized - JWT token missing or invalid",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request){
@@ -144,11 +150,13 @@ public class UserController {
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized - JWT token missing or invalid"
+                    description = "Unauthorized - JWT token missing or invalid",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "User not found"
+                    description = "User not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
     public ResponseEntity<List<CropResponse>> getFavoriteCrops(@Parameter(description = "User ID", required = true) @PathVariable int id){
@@ -157,7 +165,6 @@ public class UserController {
         return ResponseEntity.ok(favoriteCrops);
     }
 
-    //POST ADD FAVORITE CROP
     @PostMapping("/{userId}/favorite-crops/{cropId}")
     @Operation(
             summary = "Add favorite crop to user",
@@ -170,11 +177,13 @@ public class UserController {
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized - JWT token missing or invalid"
+                    description = "Unauthorized - JWT token missing or invalid",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "User or Crop not found"
+                    description = "User or Crop not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
     public ResponseEntity<Void> addFavoriteCrop(
@@ -207,11 +216,13 @@ public class UserController {
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized - JWT token missing or invalid"
+                    description = "Unauthorized - JWT token missing or invalid",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "User or Crop not found"
+                    description = "User or Crop not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
     public ResponseEntity<Void> removeFavoriteCrop(
@@ -234,11 +245,13 @@ public class UserController {
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized - JWT token missing or invalid"
+                    description = "Unauthorized - JWT token missing or invalid",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "User not found"
+                    description = "User not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
     public ResponseEntity<List<RecipeResponse>> getFavoriteRecipes(@Parameter(description = "User ID", required = true) @PathVariable int id){
@@ -259,11 +272,13 @@ public class UserController {
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized - JWT token missing or invalid"
+                    description = "Unauthorized - JWT token missing or invalid",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "User or Recipe not found"
+                    description = "User or Recipe not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
     public ResponseEntity<Void> addFavoriteRecipe(
@@ -286,11 +301,13 @@ public class UserController {
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized - JWT token missing or invalid"
+                    description = "Unauthorized - JWT token missing or invalid",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "User or Recipe not found"
+                    description = "User or Recipe not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
     public ResponseEntity<Void> removeFavoriteRecipe(
@@ -301,7 +318,6 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    //UPDATE CURRENT USER (ID)
     @PutMapping("/{id}")
     @Operation(
             summary = "Update user by ID",
@@ -315,15 +331,18 @@ public class UserController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Invalid user data"
+                    description = "Invalid user data",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized - JWT token missing or invalid"
+                    description = "Unauthorized - JWT token missing or invalid",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "User not found"
+                    description = "User not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
     public ResponseEntity<AuthResponse> updateUser(
@@ -342,7 +361,6 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    //DELETE
     @DeleteMapping("/{id}")
     @Operation(
             summary = "Delete user by ID",
@@ -355,11 +373,13 @@ public class UserController {
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized - JWT token missing or invalid"
+                    description = "Unauthorized - JWT token missing or invalid",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "User not found"
+                    description = "User not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
     public ResponseEntity<Void> deleteUser(@Parameter(description = "User ID", required = true) @PathVariable int id) {

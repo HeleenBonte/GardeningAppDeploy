@@ -7,7 +7,7 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.5.7</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<relativePath/>
 	</parent>
 
 	<groupId>be.vives.ti</groupId>
@@ -23,8 +23,6 @@
             <springdoc.version>2.8.13</springdoc.version>
             <mockito.version>5.2.0</mockito.version>
             <bytebuddy.version>1.17.8</bytebuddy.version>
-            <!-- Temporary: default to skipping tests so 'mvn install' succeeds while debugging test ApplicationContext -->
-            <skipTests>true</skipTests>
         </properties>
 
 	<dependencies>
@@ -101,14 +99,12 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- Explicit Mockito inline dependency to avoid dynamic agent warnings -->
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-inline</artifactId>
             <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
-        <!-- Byte Buddy agent dependency: copied and used as -javaagent in surefire argLine -->
         <dependency>
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy-agent</artifactId>
@@ -142,7 +138,6 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
-            <!-- copy test-agent dependencies to target/dependency so we can reference them as -javaagent -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -166,25 +161,18 @@
                 </executions>
             </plugin>
 
-            <!-- Configure Surefire to add the javaagent and avoid failing the build while investigating tests -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.4</version>
                 <configuration>
                     <argLine>-javaagent:${project.build.directory}/dependency/byte-buddy-agent-${bytebuddy.version}.jar -Djdk.instrument.traceUsage -XX:+EnableDynamicAgentLoading</argLine>
-                    <!-- Temporary: do not fail the build on test failures so 'mvn install' completes.
-                         Set to false or remove this when tests are fixed. -->
-                    <testFailureIgnore>true</testFailureIgnore>
-                    <!-- skip tests by default (override on CLI with -DskipTests=false) -->
-                    <skipTests>${skipTests}</skipTests>
                 </configuration>
             </plugin>
 
 		</plugins>
 	</build>
 
-    <!-- Option A: explicit repositories block (merge into <project> as appropriate) -->
     <repositories>
       <repository>
         <id>central</id>
@@ -199,7 +187,6 @@
       </repository>
     </repositories>
 
-    <!-- Ensure Maven uses Central for resolving plugins and plugin artifacts -->
     <pluginRepositories>
       <pluginRepository>
         <id>central</id>
@@ -208,13 +195,12 @@
       </pluginRepository>
     </pluginRepositories>
 
-    <!-- Option B: explicit dependencyManagement import for mockito-bom (fallback) -->
     <dependencyManagement>
       <dependencies>
         <dependency>
           <groupId>org.mockito</groupId>
           <artifactId>mockito-bom</artifactId>
-          <version>5.4.0</version> <!-- fallback version; change if you prefer another known-good version -->
+          <version>5.4.0</version>
           <type>pom</type>
           <scope>import</scope>
         </dependency>

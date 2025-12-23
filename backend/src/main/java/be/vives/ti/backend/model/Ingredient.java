@@ -1,10 +1,6 @@
 package be.vives.ti.backend.model;
 
-
-import jakarta.annotation.Nonnull;
 import jakarta.persistence.*;
-import org.hibernate.annotations.NotFound;
-import org.hibernate.annotations.NotFoundAction;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -18,11 +14,6 @@ public class Ingredient extends BaseEntity{
     @OneToOne
     @JoinColumn(name = "crop_id", nullable = true)
     private Crop crop;
-
-//    @ManyToMany
-//    @JoinTable(name = "RecipeQuantity", joinColumns = @JoinColumn(name = "recipeID"),
-//            inverseJoinColumns = @JoinColumn(name = "ingredientID"))
-//    private Set<Recipe> recipes;
 
     @OneToMany(mappedBy = "ingredient")
     private Set<RecipeQuantity> quantities;
@@ -57,6 +48,6 @@ public class Ingredient extends BaseEntity{
     }
 
     public void setName(String tomato) {
-
+        this.name = tomato;
     }
 }

@@ -5,8 +5,9 @@ import be.vives.ti.backend.dto.response.IngredientResponse;
 import be.vives.ti.backend.model.Ingredient;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface IngredientMapper {
     @Mapping(target = "id", ignore = true)
     Ingredient toEntity(CreateIngredientRequest request);

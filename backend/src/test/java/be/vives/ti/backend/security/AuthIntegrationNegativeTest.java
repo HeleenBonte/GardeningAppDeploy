@@ -69,10 +69,10 @@ public class AuthIntegrationNegativeTest {
         var req = new RegisterRequest("newname", "dup@example.com", "newpassword");
         ResponseEntity<String> resp = restTemplate.postForEntity("/api/auth/register", req, String.class);
 
-        // assert: server returns error status; if body present, check message text
-        assertThat(resp.getStatusCode().is5xxServerError() || resp.getStatusCode().is4xxClientError()).isTrue();
-        if (resp.getBody() != null) {
-            assertThat(resp.getBody()).contains("Email already exists");
-        }
+        // assert: server returns client error status (duplicate email -> 4xx)
+        assertThat(resp.getStatusCode().is4xxClientError()).isTrue();
+        // ensure body is present and contains the message from the application exception
+        assertThat(resp.getBody()).isNotNull();
+        assertThat(resp.getBody()).contains("Email already exists");
     }
 }

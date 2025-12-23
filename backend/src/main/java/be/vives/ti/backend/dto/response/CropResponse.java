@@ -18,6 +18,5 @@ public record CropResponse(
         String cropDescription,
         String cropTips,
         String image
-
 ) {
 }

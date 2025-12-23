@@ -1,4 +1,5 @@
 package be.vives.ti.backend.dto;
+
 public class AuthResponse {
 
     private Integer id;

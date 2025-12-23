@@ -1,6 +1,7 @@
 package be.vives.ti.backend.controller;
 
 import be.vives.ti.backend.dto.response.CourseResponse;
+import be.vives.ti.backend.dto.response.ErrorResponse;
 import be.vives.ti.backend.service.CourseService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -11,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -23,7 +23,6 @@ public class CourseController {
     public CourseController(CourseService courseService) {
         this.courseService = courseService;
     }
-    //GET ALL MEASUREMENTS
     @GetMapping
     @Operation(
             summary = "Get all courses",
@@ -33,6 +32,11 @@ public class CourseController {
             @ApiResponse(
                     responseCode = "200",
                     description = "Successfully retrieved courses"
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @io.swagger.v3.oas.annotations.media.Content(schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = ErrorResponse.class))
             )
     })
     public ResponseEntity<List<CourseResponse>> getAllCourses() {

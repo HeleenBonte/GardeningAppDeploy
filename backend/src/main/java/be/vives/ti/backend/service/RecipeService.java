@@ -13,7 +13,6 @@ import be.vives.ti.backend.repository.UserRepository;
 import be.vives.ti.backend.repository.IngredientRepository;
 import be.vives.ti.backend.repository.IngredientMeasurementRepository;
 import be.vives.ti.backend.dto.response.RecipeResponse;
-import io.swagger.v3.oas.annotations.Operation;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,18 +68,15 @@ public class RecipeService {
         log.debug("Creating new recipe: {}", request.name());
         Recipe recipe = recipeMapper.toEntity(request);
 
-        //fill in course & category
         Course course = courseRepository.findById(request.courseId()).get();
         recipe.setCourse(course);
         Category category = categoryRepository.findById(request.categoryId()).get();
         recipe.setCategory(category);
 
-        // set author if provided
         if (request.authorId() != null) {
             userRepository.findById(request.authorId()).ifPresent(recipe::setAuthor);
         }
 
-        // build quantities from request (link ingredients/measurement and recipe)
         if (request.quantities() != null) {
             for (var qReq : request.quantities()) {
                 RecipeQuantity rq = new RecipeQuantity();
@@ -92,7 +88,6 @@ public class RecipeService {
             }
         }
 
-        // build steps from request
         if (request.steps() != null) {
             for (var sReq : request.steps()) {
                 RecipeStep rs = new RecipeStep();
@@ -110,8 +105,6 @@ public class RecipeService {
 
     public Page<RecipeResponse> findByIngredientId(int ingredientID, Pageable pageable){
         log.debug("Finding recipes by ingredient id: {} with pagination: {}", ingredientID, pageable);
-        // Note: The custom query in the repository does not support pagination directly.
-        // We fetch all matching recipes and then create a Page object manually.
         Page<Recipe> recipes = recipeRepository.findByIngredientID(ingredientID, pageable);
         return recipes.map(recipeMapper::toResponse);
     }
@@ -122,7 +115,6 @@ public class RecipeService {
                 .map(recipe -> {
                     recipeMapper.updateEntity(request, recipe);
 
-                    // update course/category if provided
                     if (request.courseId() != null) {
                         courseRepository.findById(request.courseId()).ifPresent(recipe::setCourse);
                     }
@@ -130,7 +122,6 @@ public class RecipeService {
                         categoryRepository.findById(request.categoryId()).ifPresent(recipe::setCategory);
                     }
 
-                    // replace quantities
                     recipe.getQuantities().clear();
                     if (request.quantities() != null) {
                         for (var q : request.quantities()) {
@@ -143,7 +134,6 @@ public class RecipeService {
                         }
                     }
 
-                    // replace steps
                     recipe.getSteps().clear();
                     if (request.steps() != null) {
                         for (var s : request.steps()) {
@@ -175,5 +165,11 @@ public class RecipeService {
     public Optional<RecipeResponse> findById(int id) {
         log.debug("Finding recipe by id: {}", id);
         return recipeRepository.findById(id).map(recipeMapper::toResponse);
+    }
+
+    public Page<RecipeResponse> findByCourseId(int courseId, Pageable pageable) {
+        log.debug("Finding recipes by course id: {} with pagination: {}", courseId, pageable);
+        Page<Recipe> recipePage = recipeRepository.findByCourse_Id(courseId, pageable);
+        return recipePage.map(recipeMapper::toResponse);
     }
 }

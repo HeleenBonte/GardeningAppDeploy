@@ -1,9 +1,7 @@
 package be.vives.ti.backend.controller;
 
-import be.vives.ti.backend.dto.request.CreateIngredientRequest;
-import be.vives.ti.backend.dto.response.IngredientResponse;
 import be.vives.ti.backend.dto.response.MeasurementResponse;
-import be.vives.ti.backend.service.IngredientService;
+import be.vives.ti.backend.dto.response.ErrorResponse;
 import be.vives.ti.backend.service.MeasurementService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -11,17 +9,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -33,7 +25,7 @@ public class MeasurementController {
     public MeasurementController(MeasurementService measurementService) {
         this.measurementService = measurementService;
     }
-    //GET ALL MEASUREMENTS
+
     @GetMapping
     @Operation(
             summary = "Get all measurements",
@@ -43,6 +35,11 @@ public class MeasurementController {
             @ApiResponse(
                     responseCode = "200",
                     description = "Successfully retrieved measurements"
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
     public ResponseEntity<List<MeasurementResponse>> getAllMeasurements() {

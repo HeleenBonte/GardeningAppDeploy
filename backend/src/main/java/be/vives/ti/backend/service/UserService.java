@@ -17,7 +17,6 @@ import be.vives.ti.backend.repository.RecipeRepository;
 import be.vives.ti.backend.repository.UserRepository;
 import be.vives.ti.backend.dto.response.UserResponse;
 import jakarta.transaction.Transactional;
-import org.hibernate.sql.Update;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;

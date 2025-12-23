@@ -1,6 +1,7 @@
 package be.vives.ti.backend.controller;
 
 import be.vives.ti.backend.dto.request.CreateIngredientRequest;
+import be.vives.ti.backend.dto.response.ErrorResponse;
 import be.vives.ti.backend.dto.response.IngredientResponse;
 import be.vives.ti.backend.service.IngredientService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,7 +31,7 @@ public class IngredientController {
     public IngredientController(IngredientService ingredientService) {
         this.ingredientService = ingredientService;
     }
-    //GET ALL INGREDIENTS
+
     @GetMapping
     @Operation(
             summary = "Get all ingredients",
@@ -50,7 +51,6 @@ public class IngredientController {
         return ResponseEntity.ok(ingredients);
     }
 
-    //ADD NEW INGREDIENT
     @PostMapping
     @Operation(
             summary = "Create a new ingredient",
@@ -64,7 +64,8 @@ public class IngredientController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Invalid input data"
+                    description = "Invalid input data",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
     public ResponseEntity<IngredientResponse> create(@Valid @RequestBody CreateIngredientRequest request){
@@ -77,7 +78,7 @@ public class IngredientController {
 
         return ResponseEntity.created(location).body(createdIngredient);
     }
-    //DELETE INGREDIENT
+
     @DeleteMapping("/{id}")
     @Operation(
             summary = "Delete an ingredient",
@@ -90,7 +91,8 @@ public class IngredientController {
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Ingredient not found"
+                    description = "Ingredient not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
     public ResponseEntity<?> delete(@PathVariable int id) {

@@ -4,5 +4,4 @@ public record MeasurementResponse(
         Integer id,
         String name
 ) {
-    
 }

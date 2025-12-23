@@ -1,7 +1,5 @@
 package be.vives.ti.backend.dto.request;
 
-import be.vives.ti.backend.model.IngredientMeasurement;
-import be.vives.ti.backend.model.RecipeStep;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -22,7 +20,6 @@ public record CreateRecipeRequest(
         String prepTime,
         @NotBlank(message = "Cooktime is required")
         String cookTime,
-        // Image URL is optional for mobile clients; allow null/empty values
         String imageURL,
         @NotNull(message = "Course id is required")
         Integer courseId,

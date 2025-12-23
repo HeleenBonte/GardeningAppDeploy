@@ -2,6 +2,7 @@ package be.vives.ti.backend.controller;
 
 import be.vives.ti.backend.dto.request.CreateRecipeRequest;
 import be.vives.ti.backend.dto.request.UpdateRecipeRequest;
+import be.vives.ti.backend.dto.response.ErrorResponse;
 import be.vives.ti.backend.dto.response.RecipeResponse;
 import be.vives.ti.backend.service.RecipeService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -67,7 +68,7 @@ public class RecipeController {
                 log.debug("GET /api/recipes/{}", id);
                 return recipeService.findById(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
         }
-    //GET BY CAT ID
+
     @GetMapping("/category/{catId}")
     @Operation(
             summary = "get recipes by cat id",
@@ -88,7 +89,8 @@ public class RecipeController {
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Recipes not found"
+                    description = "Recipes not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
     public ResponseEntity<Page<RecipeResponse>> getByCatId(@Parameter(description = "Category ID", required = true) @PathVariable int catId,@ParameterObject Pageable pageable){
@@ -98,8 +100,6 @@ public class RecipeController {
 
     }
 
-
-    //GET BY COURSE ID
     @GetMapping("/course/{courseId}")
     @Operation(
             summary = "get recipes by course id",
@@ -120,15 +120,16 @@ public class RecipeController {
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Recipes not found"
+                    description = "Recipes not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
     public ResponseEntity<Page<RecipeResponse>> getByCourseId(@Parameter(description = "Course ID", required = true) @PathVariable int courseId,@ParameterObject Pageable pageable){
         log.debug("GET /api/recipes/course/{}", courseId);
-        Page<RecipeResponse> recipes = recipeService.findByCatId(courseId, pageable);
+        Page<RecipeResponse> recipes = recipeService.findByCourseId(courseId, pageable);
         return ResponseEntity.ok(recipes);
     }
-    //GET BY INGR NAME(ID)
+
     @GetMapping("/ingredient/{ingrId}")
     @Operation(
             summary = "get recipes by ingredient id",
@@ -149,7 +150,8 @@ public class RecipeController {
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Recipes not found"
+                    description = "Recipes not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
     public ResponseEntity<Page<RecipeResponse>> getByIngredientId(@Parameter(description = "Ingredient ID", required = true) @PathVariable int ingrId,@ParameterObject Pageable pageable){
@@ -157,7 +159,7 @@ public class RecipeController {
         Page<RecipeResponse> recipes = recipeService.findByIngredientId(ingrId, pageable);
         return ResponseEntity.ok(recipes);
     }
-    //POST ADD NEW RECIPE
+
     @PostMapping
     @Operation(
             summary = "Create a new recipe",
@@ -171,10 +173,13 @@ public class RecipeController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Invalid request data"),
+                    description = "Invalid request data",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized - JWT token missing or invalid"
+                    description = "Unauthorized - JWT token missing or invalid",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
     public ResponseEntity<RecipeResponse> createRecipe(@Valid @RequestBody CreateRecipeRequest request){
@@ -190,7 +195,6 @@ public class RecipeController {
         return ResponseEntity.created(location).body(created);
     }
 
-    //UPDATE RECIPE BY ID only admin
     @PutMapping("/{id}")
     @Operation(
             summary = "Update a recipe",
@@ -205,19 +209,23 @@ public class RecipeController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Invalid request data"
+                    description = "Invalid request data",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized - JWT token missing or invalid"
+                    description = "Unauthorized - JWT token missing or invalid",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - ADMIN role required"
+                    description = "Forbidden - ADMIN role required",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Recipe not found"
+                    description = "Recipe not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             )
     })
     public ResponseEntity<RecipeResponse> updateRecipe(
@@ -228,7 +236,7 @@ public class RecipeController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
-    //DELETE
+
     @DeleteMapping("/{id}")
     @Operation(
             summary = "Delete a recipe",
@@ -242,11 +250,13 @@ public class RecipeController {
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized - JWT token missing or invalid"
+                    description = "Unauthorized - JWT token missing or invalid",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - ADMIN role required"
+                    description = "Forbidden - ADMIN role required",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
             ),
 
     })

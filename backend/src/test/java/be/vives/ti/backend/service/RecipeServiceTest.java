@@ -200,6 +200,49 @@ public class RecipeServiceTest {
     }
 
     @Test
+    void findByCourseId_returnsMappedResponses() {
+        // Arrange
+        int courseId = 9;
+        Recipe r = new Recipe("ByCourse", null, "descCourse", "4m", "8m", null, new Course("Dinner"), new Category("Cat"));
+        Pageable pageable = PageRequest.of(0, 5);
+        Page<Recipe> page = new PageImpl<>(List.of(r), pageable, 1);
+        RecipeResponse resp = new RecipeResponse(6, "ByCourse", null, "descCourse", "4m", "8m", null, courseId, null, List.of(), List.of());
+
+        when(recipeRepository.findByCourse_Id(courseId, pageable)).thenReturn(page);
+        when(recipeMapper.toResponse(any(Recipe.class))).thenReturn(resp);
+
+        // Act
+        Page<RecipeResponse> result = recipeService.findByCourseId(courseId, pageable);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+        assertThat(result.getContent()).containsExactly(resp);
+        verify(recipeRepository, times(1)).findByCourse_Id(courseId, pageable);
+        verify(recipeMapper, times(1)).toResponse(any(Recipe.class));
+    }
+
+    @Test
+    void findByCourseId_noResults_returnsEmptyPage() {
+        // Arrange
+        int courseId = 12345; // non-existing course
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Recipe> emptyPage = new PageImpl<>(List.of(), pageable, 0);
+
+        when(recipeRepository.findByCourse_Id(courseId, pageable)).thenReturn(emptyPage);
+
+        // Act
+        Page<RecipeResponse> result = recipeService.findByCourseId(courseId, pageable);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(0, result.getTotalElements());
+        assertThat(result.getContent()).isEmpty();
+        verify(recipeRepository, times(1)).findByCourse_Id(courseId, pageable);
+        verify(recipeMapper, never()).toResponse(any(Recipe.class));
+    }
+
+    @Test
     void update_found_updatesAndReturnsResponse() {
         // Arrange
         int id = 7;

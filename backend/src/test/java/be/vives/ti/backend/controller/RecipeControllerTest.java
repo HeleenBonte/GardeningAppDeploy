@@ -103,7 +103,7 @@ public class RecipeControllerTest {
         var recipe = new RecipeResponse(4, "steak", 1, "desc", "30m", "15m", "img", 2, 1, List.of(), List.of());
         Pageable pageable = PageRequest.of(0,20);
         // controller calls recipeService.findByCatId(...) for courseId as well (implementation quirk)
-        when(getRecipeService().findByCatId(eq(2), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(recipe), pageable, 1));
+        when(getRecipeService().findByCourseId(eq(2), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(recipe), pageable, 1));
 
         mockMvc.perform(get("/api/recipes/course/{courseId}", 2).param("page","0").param("size","20"))
                 .andExpect(status().isOk())

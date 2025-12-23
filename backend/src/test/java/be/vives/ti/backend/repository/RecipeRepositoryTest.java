@@ -164,4 +164,37 @@ public class RecipeRepositoryTest {
         Optional<Recipe> result = recipeRepository.findById(id);
         assertThat(result).isEmpty();
     }
+
+
+    @Test
+    void findByCourseId_withPagination_shouldReturnPagedRecipes() {
+        be.vives.ti.backend.model.Course course = new be.vives.ti.backend.model.Course();
+        entityManager.persistAndFlush(course);
+        int courseId = course.getId();
+
+        for (int i = 0; i < 3; i++) {
+            Recipe recipe = new Recipe();
+            recipe.setRecipeName("Course Recipe " + i);
+            recipe.setCourse(course);
+            entityManager.persist(recipe);
+        }
+        entityManager.flush();
+
+        Page<Recipe> page1 = recipeRepository.findByCourse_Id(courseId, PageRequest.of(0, 2));
+        Page<Recipe> page2 = recipeRepository.findByCourse_Id(courseId, PageRequest.of(1, 2));
+
+        assertThat(page1.getContent().size()).isEqualTo(2);
+        assertThat(page2.getContent().size()).isEqualTo(1);
+    }
+
+    @Test
+    void findByCourseId_whenNone_shouldReturnEmptyPage() {
+        int nonExistingCourseId = 99999;
+
+        Page<Recipe> page = recipeRepository.findByCourse_Id(nonExistingCourseId, PageRequest.of(0, 10));
+
+        assertThat(page.getContent()).isEmpty();
+        assertThat(page.getTotalElements()).isEqualTo(0);
+    }
+
 }
