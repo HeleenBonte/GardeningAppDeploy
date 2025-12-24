@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "frontend",
-    "slug": "frontend",
+    "name": "Gardeners of the Galaxy",
+    "slug": "gardeners-of-the-galaxy",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

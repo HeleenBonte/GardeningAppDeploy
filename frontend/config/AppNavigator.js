@@ -59,25 +59,25 @@ function MainTabs() {
         },
       })}
     >
-      <Tab.Screen 
-        name="HomeTab" 
-        component={HomeScreen} 
-        options={{ tabBarLabel: t ? t('tabs.home') : 'Home', tabBarAccessibilityLabel: t ? t('tabs.home') : 'Home', tabBarAccessibilityHint: t ? t('tabs.homeHint') : 'Go to Home' }}
+      <Tab.Screen
+        name="HomeTab"
+        component={HomeScreen}
+        options={() => ({ tabBarLabel: t ? t('tabs.home') : 'Home', tabBarAccessibilityLabel: t ? t('tabs.home') : 'Home', tabBarAccessibilityHint: t ? t('tabs.homeHint') : 'Go to Home' })}
       />
-      <Tab.Screen 
-        name="Crops" 
-        component={CropsStackScreen} 
-        options={{ tabBarLabel: t ? t('tabs.crops') : 'Crops', tabBarAccessibilityLabel: t ? t('tabs.crops') : 'Crops', tabBarAccessibilityHint: t ? t('tabs.cropsHint') : 'Go to Crops' }}
+      <Tab.Screen
+        name="Crops"
+        component={CropsStackScreen}
+        options={() => ({ tabBarLabel: t ? t('tabs.crops') : 'Crops', tabBarAccessibilityLabel: t ? t('tabs.crops') : 'Crops', tabBarAccessibilityHint: t ? t('tabs.cropsHint') : 'Go to Crops' })}
       />
-      <Tab.Screen 
-        name="Recipes" 
-        component={RecipesStackScreen} 
-        options={{ tabBarLabel: t ? t('tabs.recipes') : 'Recipes', tabBarAccessibilityLabel: t ? t('tabs.recipes') : 'Recipes', tabBarAccessibilityHint: t ? t('tabs.recipesHint') : 'Go to Recipes' }}
+      <Tab.Screen
+        name="Recipes"
+        component={RecipesStackScreen}
+        options={() => ({ tabBarLabel: t ? t('tabs.recipes') : 'Recipes', tabBarAccessibilityLabel: t ? t('tabs.recipes') : 'Recipes', tabBarAccessibilityHint: t ? t('tabs.recipesHint') : 'Go to Recipes' })}
       />
-      <Tab.Screen 
-        name="Favorites" 
-        component={FavoritesScreen} 
-        options={{ tabBarLabel: t ? t('tabs.favorites') : 'Favorites', tabBarAccessibilityLabel: t ? t('tabs.favorites') : 'Favorites', tabBarAccessibilityHint: t ? t('tabs.favoritesHint') : 'Go to Favorites' }}
+      <Tab.Screen
+        name="Favorites"
+        component={FavoritesScreen}
+        options={() => ({ tabBarLabel: t ? t('tabs.favorites') : 'Favorites', tabBarAccessibilityLabel: t ? t('tabs.favorites') : 'Favorites', tabBarAccessibilityHint: t ? t('tabs.favoritesHint') : 'Go to Favorites' })}
         listeners={({ navigation }) => ({
           tabPress: (e) => {
             (async () => {

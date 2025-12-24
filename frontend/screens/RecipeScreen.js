@@ -264,7 +264,22 @@ export default function RecipeScreen({ navigation }) {
             </View>
               <Text style={[styles.filterTitle, { color: theme.text }]}>{t ? t('recipe.filterByCrop') : 'Filter'}</Text>
           </View>
-            <TouchableOpacity onPress={() => { setSearch(''); setSelectedFilters([]); reload(); }} accessibilityRole="button" accessibilityLabel={t ? t('recipe.reset') : 'Reset'} accessibilityHint={t ? t('recipe.resetA11yHint') : 'Clears filters and search'} hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}>
+            <TouchableOpacity
+              onPress={() => {
+                setSearch('');
+                setSelectedFilters([]);
+                setIngredientQuery('');
+                setSelectedIngredient(null);
+                setIngredientFocused(false);
+                setOpenIngredient(false);
+                Keyboard.dismiss();
+                reload();
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={t ? t('recipe.reset') : 'Reset'}
+              accessibilityHint={t ? t('recipe.resetA11yHint') : 'Clears filters and search'}
+              hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
+            >
               <Text style={[styles.clearAll, { color: theme.primary }]}>{t ? t('recipe.reset') : 'Reset'}</Text>
             </TouchableOpacity>
         </View>

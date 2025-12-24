@@ -44,23 +44,20 @@ export default function CropDetailScreen() {
       } catch (_) {}
 
       try {
-        const parent = navigation.getParent && navigation.getParent();
-        if (parent) {
-          if (parent.jumpTo) {
-            parent.jumpTo('Crops');
-            try { parent.navigate('Crops', { screen: 'CropsList' }); } catch (_) {}
-            return;
-          }
-          if (parent.navigate) {
-            parent.navigate('Crops', { screen: 'CropsList' });
-            return;
-          }
+        if (typeof navigation.pop === 'function') {
+          navigation.pop();
+          return;
         }
       } catch (_) {}
 
-      try { navigation.navigate('Crops', { screen: 'CropsList' }); } catch (_) {}
+      try {
+        if (typeof navigation.dismiss === 'function') {
+          navigation.dismiss();
+          return;
+        }
+      } catch (_) {}
     });
-    return unsub;
+    return () => unsub && unsub();
   }, [navigation, cropId]);
 
   const [favLoading, setFavLoading] = React.useState(false);

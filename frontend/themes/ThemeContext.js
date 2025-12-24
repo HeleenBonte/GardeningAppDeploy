@@ -134,7 +134,17 @@ export const ThemeProvider = ({ children }) => {
     return 'Fall';
   };
 
-  const currentSeason = seasonOverride || getCurrentSeason();
+  const normalizeSeason = (s) => {
+    if (!s) return null;
+    const l = String(s).toLowerCase();
+    if (l === 'autumn' || l === 'fall') return 'Fall';
+    if (l === 'winter') return 'Winter';
+    if (l === 'spring') return 'Spring';
+    if (l === 'summer') return 'Summer';
+    return String(s);
+  };
+
+  const currentSeason = seasonOverride ? normalizeSeason(seasonOverride) : getCurrentSeason();
   const theme = isDarkMode ? createDarkTheme(currentSeason) : createLightTheme(currentSeason);
 
   useEffect(() => {

@@ -7,7 +7,7 @@ import { createRecipe, getMeasurements, getCourses, getCategories, getIngredient
 import unitConverter from '../lib/unitConverter';
 import useUnitPreference from '../hooks/useUnitPreference';
 import useTranslation from '../hooks/useTranslation';
-import IngredientPicker from '../components/IngredientPicker';
+// IngredientPicker removed — using inline dropdown in this screen
 import commonStyles from '../themes/styles';
 
 export default function AddRecipeScreen({ navigation }) {
@@ -248,6 +248,32 @@ export default function AddRecipeScreen({ navigation }) {
     return () => { showSub.remove(); hideSub.remove(); };
   }, []);
 
+  React.useEffect(() => {
+    const unsub = navigation.addListener('blur', () => {
+      try {
+        if (navigation?.canGoBack && navigation.canGoBack()) {
+          navigation.goBack();
+          return;
+        }
+      } catch (_) {}
+
+      try {
+        if (typeof navigation.pop === 'function') {
+          navigation.pop();
+          return;
+        }
+      } catch (_) {}
+
+      try {
+        if (typeof navigation.dismiss === 'function') {
+          navigation.dismiss();
+          return;
+        }
+      } catch (_) {}
+    });
+    return () => unsub && unsub();
+  }, [navigation]);
+
   function handleDismissAll() {
     Keyboard.dismiss();
     setOpenIngredientFor(null);
@@ -401,17 +427,34 @@ export default function AddRecipeScreen({ navigation }) {
           <Text style={[styles.subheading, { color: theme.text }]}>{t ? t('addRecipe.ingredientsHeading') : 'Ingredients'}</Text>
           {ingredients.map((ing) => (
             <View key={ing.id} style={styles.itemRow}>
-              <View style={{ flex: 1.5, marginRight: 6 }}>
-                <IngredientPicker
-                  ingredients={allIngredients}
-                  value={ing.ingredientQuery || (ing.ingredientId ? String(ing.ingredientId) : '')}
-                  onChangeText={(v) => { updateIngredient(ing.id, 'ingredientQuery', v); setOpenIngredientFor(ing.id); if (/^\d+$/.test(v)) { updateIngredient(ing.id, 'ingredientId', v); } else { updateIngredient(ing.id, 'ingredientId', ''); } }}
-                  onSelect={(a) => { if (a) { updateIngredient(ing.id, 'ingredientId', a.id); updateIngredient(ing.id, 'ingredientQuery', a.name); } else { updateIngredient(ing.id, 'ingredientId', ''); } setOpenIngredientFor(null); }}
-                  inputRef={(r) => { inputRefs.current[`ingredientQuery-${ing.id}`] = r; }}
+              <View style={{ flex: 1.6, marginRight: 6 }}>
+                <TextInput
+                  ref={(r) => { inputRefs.current[`ingredientQuery-${ing.id}`] = r; }}
                   onFocus={() => { setOpenIngredientFor(ing.id); scrollToNodeKey(`ingredientQuery-${ing.id}`); }}
                   placeholder={t ? t('addRecipe.ingredientPlaceholder') : 'Ingredient'}
-                  theme={theme}
+                  placeholderTextColor={theme.secondaryText}
+                  value={ing.ingredientQuery || (ing.ingredientId ? String(ing.ingredientId) : '')}
+                  onChangeText={(v) => { updateIngredient(ing.id, 'ingredientQuery', v); setOpenIngredientFor(ing.id); if (/^\d+$/.test(v)) { updateIngredient(ing.id, 'ingredientId', v); } else { updateIngredient(ing.id, 'ingredientId', ''); } }}
+                  style={[styles.input, { backgroundColor: theme.imagePlaceholderBg, color: theme.text }]}
+                  accessibilityLabel={t ? t('addRecipe.ingredientPlaceholder') : 'Ingredient'}
                 />
+
+                {openIngredientFor === ing.id && (
+                  <View style={[styles.dropdown, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}> 
+                    {(() => {
+                      const q = (ing.ingredientQuery || '').toString().toLowerCase();
+                      const list = Array.isArray(allIngredients) ? allIngredients : [];
+                      const filtered = q ? list.filter(i => (i.name || '').toString().toLowerCase().includes(q) || String(i.id).includes(q)) : list;
+                      const sliced = filtered.slice(0, 8);
+                      if (sliced.length === 0) return (<Text style={{ color: theme.secondaryText, padding: 8 }}>{t ? t('noMatches') : 'No matches'}</Text>);
+                      return sliced.map((a) => (
+                        <TouchableOpacity key={a.id} onPress={() => { updateIngredient(ing.id, 'ingredientId', a.id); updateIngredient(ing.id, 'ingredientQuery', a.name); setOpenIngredientFor(null); Keyboard.dismiss(); }} style={styles.dropdownItem} accessibilityRole="button" accessibilityLabel={a.name}>
+                          <Text style={{ color: theme.text }}>{a.name}</Text>
+                        </TouchableOpacity>
+                      ));
+                    })()}
+                  </View>
+                )}
               </View>
                 <TouchableOpacity
                   ref={(r) => { inputRefs.current[`measurementPicker-${ing.id}`] = r; }}
@@ -431,7 +474,7 @@ export default function AddRecipeScreen({ navigation }) {
                 placeholderTextColor={theme.secondaryText}
                 value={String(ing.quantity)}
                 onChangeText={(v) => updateIngredient(ing.id, 'quantity', v)}
-                style={[styles.input, { flex: 1.2, backgroundColor: theme.imagePlaceholderBg, color: theme.text }]}
+                style={[styles.input, { flex: 1.1, backgroundColor: theme.imagePlaceholderBg, color: theme.text }]}
                 keyboardType="numeric"
                 accessibilityLabel={t ? t('addRecipe.quantityLabel') : 'Quantity'}
               />

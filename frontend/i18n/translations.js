@@ -192,7 +192,11 @@ const translations = {
       home: 'Home',
       crops: 'Crops',
       recipes: 'Recipes',
-      favorites: 'Favorites'
+      favorites: 'Favorites',
+      homeHint: 'Open the home screen',
+      cropsHint: 'Open the crops list',
+      recipesHint: 'Open the recipes list',
+      favoritesHint: 'Open your favorites'
     },
     favorites: {
       crops: 'Crops',
@@ -280,20 +284,7 @@ const translations = {
       ,resetA11yHint: 'Resets filters'
       ,searchA11yHint: 'Search recipes'
     },
-    tabs: {
-      home: 'Start',
-      crops: 'Gewassen',
-      recipes: 'Recepten',
-      favorites: 'Favorieten',
-        homeHint: 'Open the home screen',
-        cropsHint: 'Open the crops list',
-        recipesHint: 'Open the recipes list',
-        favoritesHint: 'Open your favorites',
-      homeHint: 'Open het startscherm',
-      cropsHint: 'Open de gewassenlijst',
-      recipesHint: 'Open de receptenlijst',
-      favoritesHint: 'Open uw favorieten'
-    },
+    
   },
   nl: {
     settings: 'Instellingen',
@@ -484,6 +475,16 @@ const translations = {
     },
     view: 'Bekijken',
     close: 'Sluiten',
+    tabs: {
+      home: 'Start',
+      crops: 'Gewassen',
+      recipes: 'Recepten',
+      favorites: 'Favorieten',
+      homeHint: 'Open het startscherm',
+      cropsHint: 'Open de gewassenlijst',
+      recipesHint: 'Open de receptenlijst',
+      favoritesHint: 'Open uw favorieten'
+    },
     favorites: {
       crops: 'Gewassen',
       recipes: 'Recepten',

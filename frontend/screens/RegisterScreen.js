@@ -98,8 +98,9 @@ export default function RegisterScreen() {
             <TextInput
               placeholder={(t && t('register.namePlaceholder')) || 'Enter your name'}
               placeholderTextColor={theme.secondaryText}
-              value={name}
-              onChangeText={setName}
+                value={name}
+                onChangeText={setName}
+                onBlur={() => setName((s) => (s ? s.trim() : ''))}
               style={[styles.input, { backgroundColor: theme.imagePlaceholderBg, color: theme.text, borderColor: theme.cardBorder }]}
             />
 
@@ -109,6 +110,7 @@ export default function RegisterScreen() {
               placeholderTextColor={theme.secondaryText}
               value={email}
               onChangeText={(t) => setEmail(t?.trim().toLowerCase())}
+              onBlur={() => setEmail((s) => (s ? s.trim().toLowerCase() : ''))}
               keyboardType="email-address"
               autoCapitalize="none"
               style={[styles.input, { backgroundColor: theme.imagePlaceholderBg, color: theme.text, borderColor: theme.cardBorder }]}
@@ -121,6 +123,7 @@ export default function RegisterScreen() {
                 placeholderTextColor={theme.secondaryText}
                 value={password}
                 onChangeText={setPassword}
+                onBlur={() => setPassword((s) => (s ? s.trim() : ''))}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -138,6 +141,7 @@ export default function RegisterScreen() {
                 placeholderTextColor={theme.secondaryText}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
+                onBlur={() => setConfirmPassword((s) => (s ? s.trim() : ''))}
                 secureTextEntry={!showConfirmPassword}
                 autoCapitalize="none"
                 autoCorrect={false}

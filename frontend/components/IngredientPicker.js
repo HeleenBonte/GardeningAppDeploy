@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { View, TextInput, TouchableOpacity, TouchableWithoutFeedback, Text, StyleSheet, Dimensions, Keyboard, Platform, ScrollView } from 'react-native';
 import RootSiblings from 'react-native-root-siblings';
 import useTranslation from '../hooks/useTranslation';
@@ -16,7 +16,6 @@ export default function IngredientPicker({
   theme = {},
 }) {
   const [open, setOpen] = useState(false);
-  const [openUp, setOpenUp] = useState(false);
   const localRef = useRef(null);
   const wrapperRef = useRef(null);
   const [dropdownTop, setDropdownTop] = useState(null);
@@ -36,7 +35,16 @@ export default function IngredientPicker({
   const displayValue = selected ? selected.name : value || '';
   const { t } = useTranslation();
 
+  const [localValue, setLocalValue] = useState(displayValue);
+  useEffect(() => setLocalValue(displayValue), [displayValue]);
 
+  const q = (selected ? '' : (value || '')).toString().toLowerCase();
+  const filtered = (ingredients || [])
+    .filter((a) => {
+      if (!q) return true;
+      return (a.name || '').toLowerCase().includes(q) || String(a.id).includes(q);
+    })
+    .slice(0, 8);
 
   function handleFocus(e) {
     if (onFocus) onFocus(e);
@@ -52,16 +60,19 @@ export default function IngredientPicker({
       const itemHeight = 42;
       const estHeight = Math.min((filtered.length || 0) * itemHeight + 8, maxEstimate);
 
-      if (localRef.current && wrapperRef.current && typeof localRef.current.measureInWindow === 'function' && typeof wrapperRef.current.measureInWindow === 'function') {
+      if (
+        localRef.current &&
+        wrapperRef.current &&
+        typeof localRef.current.measureInWindow === 'function' &&
+        typeof wrapperRef.current.measureInWindow === 'function'
+      ) {
         localRef.current.measureInWindow((ix, iy, iw, ih) => {
           wrapperRef.current.measureInWindow((px, py, pw, ph) => {
             const spaceBelow = win.height - (iy + ih);
-            const shouldOpenUp = (spaceBelow < estHeight + 8);
-            setOpenUp(shouldOpenUp);
-            const downOffset = 0; 
-            const upOffset = 0; 
+            const shouldOpenUp = spaceBelow < estHeight + 8;
+            const downOffset = 0;
             if (shouldOpenUp) {
-              const availableAboveWindow = iy - 8; 
+              const availableAboveWindow = iy - 8;
               const maxH = Math.min(estHeight, availableAboveWindow > 0 ? availableAboveWindow : estHeight);
               if (Platform.OS === 'android') {
                 setDropdownWindowTop(iy - maxH);
@@ -72,7 +83,7 @@ export default function IngredientPicker({
                 setDropdownBottom(null);
                 setUsePortal(true);
               } else {
-                const bottom = (py + ph) - iy; 
+                const bottom = py + ph - iy;
                 setDropdownBottom(bottom < 0 ? 0 : bottom);
                 setDropdownTop(null);
                 setDropdownMaxHeight(maxH);
@@ -89,6 +100,7 @@ export default function IngredientPicker({
         });
       }
     } catch (e) {
+      // ignore
     }
   }
 
@@ -96,27 +108,19 @@ export default function IngredientPicker({
     const showSub = Keyboard.addListener('keyboardDidShow', computeDropdownPosition);
     const hideSub = Keyboard.addListener('keyboardDidHide', computeDropdownPosition);
     return () => {
-      try { showSub.remove(); } catch (e) { }
-      try { hideSub.remove(); } catch (e) { }
+      try { showSub.remove(); } catch (e) {}
+      try { hideSub.remove(); } catch (e) {}
     };
   }, [ingredients.length, value, selected]);
 
-  const q = (selected ? '' : (value || '')).toString().toLowerCase();
-  const filtered = (ingredients || []).filter((a) => {
-    if (!q) return true;
-    return (a.name || '').toLowerCase().includes(q) || String(a.id).includes(q);
-  }).slice(0, 8);
-
   useEffect(() => {
-    if (open) {
-      requestAnimationFrame(computeDropdownPosition);
-    }
+    if (open) requestAnimationFrame(computeDropdownPosition);
   }, [open, filtered.length, value]);
 
   useEffect(() => {
     if (Platform.OS === 'android' && open && usePortal) {
       const id = setTimeout(() => {
-        try { if (localRef.current && typeof localRef.current.focus === 'function') localRef.current.focus(); } catch (e) { }
+        try { if (localRef.current && typeof localRef.current.focus === 'function') localRef.current.focus(); } catch (e) {}
       }, 80);
       return () => clearTimeout(id);
     }
@@ -129,11 +133,24 @@ export default function IngredientPicker({
       const renderContent = () => (
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 2147483647, elevation: 2147483647 }} pointerEvents="box-none">
           <TouchableWithoutFeedback onPress={() => setOpen(false)}>
-            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+            <View pointerEvents="box-none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
           </TouchableWithoutFeedback>
           <View pointerEvents="box-none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
             <View
-              style={[styles.dropdown, { position: 'absolute', left: dropdownWindowLeft != null ? dropdownWindowLeft : 0, top: dropdownWindowTop != null ? dropdownWindowTop : 0, width: dropdownWindowWidth != null ? dropdownWindowWidth : undefined, backgroundColor: theme.cardBg || '#fff', borderColor: theme.cardBorder || '#ddd', maxHeight: dropdownMaxHeight != null ? dropdownMaxHeight : 200, zIndex: 2147483647, elevation: 2147483647 }]}
+              style={[
+                styles.dropdown,
+                {
+                  position: 'absolute',
+                  left: dropdownWindowLeft != null ? dropdownWindowLeft : 0,
+                  top: dropdownWindowTop != null ? dropdownWindowTop : 0,
+                  width: dropdownWindowWidth != null ? dropdownWindowWidth : undefined,
+                  backgroundColor: theme.cardBg || '#fff',
+                  borderColor: theme.cardBorder || '#ddd',
+                  maxHeight: dropdownMaxHeight != null ? dropdownMaxHeight : 200,
+                  zIndex: 2147483647,
+                  elevation: 2147483647,
+                },
+              ]}
               accessibilityRole="menu"
               accessibilityLabel={t ? t('addRecipe.ingredientSuggestionsA11yLabel') : 'Ingredient suggestions'}
             >
@@ -146,7 +163,12 @@ export default function IngredientPicker({
                   {filtered.map((a) => (
                     <TouchableOpacity
                       key={a.id}
-                      onPress={() => { onSelect(a); setOpen(false); }}
+                      onPress={() => {
+                        try { onSelect(a); } catch (e) {}
+                        try { setLocalValue(a.name); } catch (e) {}
+                        try { if (typeof onChangeText === 'function') onChangeText(a.name); } catch (e) {}
+                        setOpen(false);
+                      }}
                       style={styles.dropdownItem}
                       accessibilityRole="menuitem"
                       accessibilityLabel={a.name}
@@ -164,18 +186,18 @@ export default function IngredientPicker({
       );
 
       if (portalRef.current) {
-        try { portalRef.current.update(renderContent()); } catch (e) {  }
+        try { portalRef.current.update(renderContent()); } catch (e) {}
       } else {
-        try { portalRef.current = new RootSiblings(renderContent()); } catch (e) { }
+        try { portalRef.current = new RootSiblings(renderContent()); } catch (e) {}
       }
     } else {
       if (portalRef.current) {
-        try { portalRef.current.destroy(); portalRef.current = null; } catch (e) {  }
+        try { portalRef.current.destroy(); portalRef.current = null; } catch (e) {}
       }
     }
     return () => {
       if (portalRef.current) {
-        try { portalRef.current.destroy(); portalRef.current = null; } catch (e) {  }
+        try { portalRef.current.destroy(); portalRef.current = null; } catch (e) {}
       }
     };
   }, [open, usePortal, dropdownWindowLeft, dropdownWindowTop, dropdownWindowWidth, dropdownMaxHeight, filtered.length, theme, t]);
@@ -187,8 +209,8 @@ export default function IngredientPicker({
           ref={localRef}
           placeholder={placeholder}
           placeholderTextColor={theme.secondaryText}
-          value={displayValue}
-          onChangeText={(v) => { onChangeText(v); setOpen(true); }}
+          value={localValue}
+          onChangeText={(v) => { setLocalValue(v); try { if (typeof onChangeText === 'function') onChangeText(v); } catch (e) {} setOpen(true); }}
           onFocus={handleFocus}
           onBlur={() => setOpen(false)}
           style={[styles.input, { backgroundColor: theme.imagePlaceholderBg || '#fff', color: theme.text || '#000', borderColor: theme.cardBorder || '#ddd' }]}
@@ -197,9 +219,10 @@ export default function IngredientPicker({
           accessibilityHint={t ? t('addRecipe.selectIngredientHint') : 'Opens ingredient suggestions'}
           accessibilityState={{ expanded: open }}
         />
+
         {selected ? (
           <TouchableOpacity
-            onPress={() => { onSelect(null); setOpen(true); }}
+            onPress={() => { try { onSelect(null); } catch (e) {} try { setLocalValue(''); } catch (e) {} try { if (typeof onChangeText === 'function') onChangeText(''); } catch (e) {} setOpen(true); }}
             style={{ marginLeft: 8, padding: 6 }}
             accessibilityRole="button"
             accessibilityLabel={t ? t('addRecipe.clearSelection') : 'Clear selection'}
@@ -226,7 +249,7 @@ export default function IngredientPicker({
               {filtered.map((a) => (
                 <TouchableOpacity
                   key={a.id}
-                  onPress={() => { onSelect(a); setOpen(false); }}
+                  onPress={() => { try { onSelect(a); } catch (e) {} try { setLocalValue(a.name); } catch (e) {} try { if (typeof onChangeText === 'function') onChangeText(a.name); } catch (e) {} setOpen(false); }}
                   style={styles.dropdownItem}
                   accessibilityRole="menuitem"
                   accessibilityLabel={a.name}
