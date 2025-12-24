@@ -3,7 +3,8 @@ import { getJwtToken, logout } from '../auth/storage';
 
 const PROD_URL = 'https://api.yourdomain.com';
 
-let API_BASE_URL = 'http://192.168.129.44:8080';
+let API_BASE_URL = 'http://35.192.27.1:8080';
+//let API_BASE_URL = 'http://192.168.129.44:8080';
 if (__DEV__) {
     const debuggerHost = Constants.manifest?.debuggerHost
         || Constants.manifest?.hostUri
