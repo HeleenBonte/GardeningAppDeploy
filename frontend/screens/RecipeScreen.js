@@ -9,6 +9,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AppHeader from '../components/AppHeader';
@@ -17,7 +18,6 @@ import useRecipes from '../hooks/useRecipes';
 import useTranslation from '../hooks/useTranslation';
 import { getItem } from '../auth/storage';
 import { getIngredients } from '../config/api';
-import IngredientPicker from '../components/IngredientPicker';
 import { getUserFavoriteRecipes, addFavoriteRecipe, removeFavoriteRecipe } from '../config/api';
 import { useIsFocused } from '@react-navigation/native';
 import { filterRecipe } from '../lib/recipeFilters';
@@ -102,6 +102,7 @@ export default function RecipeScreen({ navigation }) {
   const [ingredientQuery, setIngredientQuery] = useState('');
   const [openIngredient, setOpenIngredient] = useState(false);
   const [selectedIngredient, setSelectedIngredient] = useState(null);
+  const [ingredientFocused, setIngredientFocused] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -132,6 +133,14 @@ export default function RecipeScreen({ navigation }) {
     return () => { mounted = false; };
   }, []);
 
+  const visibleIngredients = React.useMemo(() => {
+    const q = (ingredientQuery || '').toString().toLowerCase();
+    const list = Array.isArray(allIngredients) ? allIngredients : [];
+    const filtered = q ? list.filter(i => (i.name || '').toString().toLowerCase().includes(q)) : list;
+    return filtered.slice(0, 5);
+  }, [allIngredients, ingredientQuery]);
+
+
   async function onToggleFavorite(recipeId) {
     const userId = await getItem('user_id');
     if (!userId) {
@@ -145,7 +154,6 @@ export default function RecipeScreen({ navigation }) {
       );
       return;
     }
-    // set loading
     setFavLoadingIds(prev => new Set(prev).add(recipeId));
     try {
       if (favoritesIds.has(recipeId)) {
@@ -189,7 +197,6 @@ export default function RecipeScreen({ navigation }) {
   const toggleFilter = (key) => setSelectedFilters((prev) => prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]);
 
   const filteredRecipes = useMemo(() => recipes.filter((r) => filterRecipe(r, { search, selectedFilters })), [recipes, search, selectedFilters]);
-  // apply ingredient filter if selectedIngredient is set
   const filteredWithIngredient = useMemo(() => {
     let list = Array.isArray(filteredRecipes) ? filteredRecipes : [];
     if (!selectedIngredient) return list;
@@ -255,7 +262,7 @@ export default function RecipeScreen({ navigation }) {
             <View style={[styles.filterIconCircle, { backgroundColor: theme.activeTabBg }]}>
               <Ionicons name="funnel-outline" size={16} color={theme.primary} />
             </View>
-              <Text style={[styles.filterTitle, { color: theme.text }]}>{t ? t('recipe.filterByCrop') : 'Filter by Crop'}</Text>
+              <Text style={[styles.filterTitle, { color: theme.text }]}>{t ? t('recipe.filterByCrop') : 'Filter'}</Text>
           </View>
             <TouchableOpacity onPress={() => { setSearch(''); setSelectedFilters([]); reload(); }} accessibilityRole="button" accessibilityLabel={t ? t('recipe.reset') : 'Reset'} accessibilityHint={t ? t('recipe.resetA11yHint') : 'Clears filters and search'} hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}>
               <Text style={[styles.clearAll, { color: theme.primary }]}>{t ? t('recipe.reset') : 'Reset'}</Text>
@@ -266,16 +273,45 @@ export default function RecipeScreen({ navigation }) {
 
         <View style={{ marginTop: 8 }}>
           <View style={styles.dropdownWrapper}>
-            <IngredientPicker
-              ingredients={allIngredients}
-              value={ingredientQuery}
-              selected={selectedIngredient}
-              onChangeText={(v) => { setIngredientQuery(v); setSelectedIngredient(null); }}
-              onSelect={(a) => { setSelectedIngredient(a); setIngredientQuery(''); }}
+            <TextInput
               placeholder={t ? t('recipe.filterByIngredient') : 'Filter by ingredient...'}
-              theme={theme}
-              forceOpenUp={true}
+              placeholderTextColor={theme.secondaryText}
+              value={ingredientQuery}
+              onChangeText={(v) => { setIngredientQuery(v); setSelectedIngredient(null); }}
+              onFocus={() => { setIngredientFocused(true); }}
+              style={[styles.searchInput, { backgroundColor: theme.imagePlaceholderBg, color: theme.text, borderColor: theme.cardBorder }]}
+              accessibilityLabel={t ? t('recipe.filterByIngredient') : 'Filter by ingredient'}
+              accessibilityHint={t ? t('recipe.filterByIngredientA11y') : 'Type to filter ingredients'}
             />
+
+            
+            {ingredientFocused && (
+              <View style={[styles.inlineList, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}> 
+                {visibleIngredients.length === 0 ? (
+                  <Text style={{ color: theme.secondaryText, padding: 8 }}>{t ? t('noMatches') : 'No ingredients'}</Text>
+                ) : (
+                  <>
+                    <TouchableOpacity key="__close" onPress={() => setIngredientFocused(false)} style={styles.inlineItem} accessibilityRole="button" accessibilityLabel={'Hide list'}>
+                      <Text style={{ color: theme.primary, paddingVertical: 8 }}>Hide list</Text>
+                    </TouchableOpacity>
+                    {visibleIngredients.map((ing) => (
+                      <TouchableOpacity
+                        key={ing.id}
+                        onPressIn={() => {
+                          setSelectedIngredient(ing);
+                          setIngredientQuery(ing.name || '');
+                          setIngredientFocused(false);
+                          Keyboard.dismiss();
+                        }}
+                        style={styles.inlineItem}
+                      >
+                        <Text style={{ color: theme.text, paddingVertical: 8 }}>{ing.name}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </>
+                )}
+              </View>
+            )}
           </View>
         </View>
       </View>
@@ -283,7 +319,7 @@ export default function RecipeScreen({ navigation }) {
   );
 
   if (loading) return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
+    <ScrollView keyboardShouldPersistTaps="handled" style={[styles.container, { backgroundColor: theme.background }]}> 
       {renderHeader}
       <View style={styles.stateWrapper}>
         <ActivityIndicator color={theme.primary} size="large" />
@@ -293,7 +329,7 @@ export default function RecipeScreen({ navigation }) {
   );
 
   if (error) return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
+    <ScrollView keyboardShouldPersistTaps="handled" style={[styles.container, { backgroundColor: theme.background }]}> 
       {renderHeader}
       <View style={styles.stateWrapper}>
         <Ionicons name="alert-circle" size={32} color={theme.primary} accessible={false} />
@@ -308,6 +344,7 @@ export default function RecipeScreen({ navigation }) {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}> 
       <FlatList
+        keyboardShouldPersistTaps="handled"
         ListHeaderComponent={renderHeader}
         data={filteredWithIngredient}
         keyExtractor={(item) => String(item.id)}
@@ -337,12 +374,13 @@ export default function RecipeScreen({ navigation }) {
 
 const localStyles = StyleSheet.create({
   dropdownWrapper: { zIndex: 9999, elevation: 9999, position: 'relative' },
+  inlineList: { borderWidth: 1, borderRadius: 10, marginTop: 8, overflow: 'hidden' },
+  inlineItem: { paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: 'transparent' },
   hero: { paddingTop: 20, paddingHorizontal: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 },
   subtitleSection: { paddingHorizontal: 20, paddingBottom: 12 },
   subtitle: { fontSize: 14, marginTop: 4, lineHeight: 20 },
   addButton: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 6, elevation: 4 },
   addButtonText: { fontWeight: '600', fontSize: 15 },
-  /* allow dropdown to overflow and add extra space below filters */
   filterCard: { marginHorizontal: 20, paddingHorizontal: 16, borderRadius: 12, borderWidth: 1, padding: 14, gap: 10, marginBottom: 18, overflow: 'visible' },
   filterHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   filterHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },

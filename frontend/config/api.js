@@ -3,11 +3,8 @@ import { getJwtToken, logout } from '../auth/storage';
 
 const PROD_URL = 'https://api.yourdomain.com';
 
-// Default to the prior hard-coded host, but derive dynamically in dev
 let API_BASE_URL = 'http://192.168.129.44:8080';
-//let API_BASE_URL = 'http://10.37.249.133:8080';
 if (__DEV__) {
-    // Try several places where Expo may expose the dev host
     const debuggerHost = Constants.manifest?.debuggerHost
         || Constants.manifest?.hostUri
         || Constants.expoConfig?.hostUri
@@ -20,11 +17,7 @@ if (__DEV__) {
     API_BASE_URL = PROD_URL;
 }
 
-// Helpful debug output in dev so you can confirm which host is used from the phone
-if (__DEV__) {
-    // eslint-disable-next-line no-console
-    console.log('[api] API_BASE_URL =', API_BASE_URL, ' (derived from expo Constants)');
-}
+console.log('[api] API_BASE_URL =', API_BASE_URL, ' (derived from expo Constants)');
 
 async function request(path, { method = 'GET', body, headers = {} } = {}) {
     const url = `${API_BASE_URL}${path}`;
@@ -32,17 +25,14 @@ async function request(path, { method = 'GET', body, headers = {} } = {}) {
         method,
         headers: { 'Content-Type': 'application/json', ...headers },
     };
-    // Attach JWT if present
     try {
-        const token = await getJwtToken();
-        // Debug: log token presence (do not log the full token)
-        if (__DEV__) console.log('[api] token present?', !!token, url, method);
+    const token = await getJwtToken();
+    console.log('[api] token present?', !!token, url, method);
         if (token) {
             opts.headers.Authorization = `Bearer ${token}`;
         }
     } catch (e) {
         if (__DEV__) console.warn('[api] failed to read token from storage', e);
-        // ignore storage errors and proceed without Authorization header
     }
     if (body) opts.body = JSON.stringify(body);
 
@@ -50,7 +40,6 @@ async function request(path, { method = 'GET', body, headers = {} } = {}) {
     try {
         res = await fetch(url, opts);
     } catch (err) {
-        // Network error (DNS, unreachable, CORS blocked by network) — make message clearer
         const e = new Error(`Network request failed to ${url}: ${err.message}`);
         e.cause = err;
         throw e;
@@ -64,7 +53,6 @@ async function request(path, { method = 'GET', body, headers = {} } = {}) {
             parsed = null;
         }
 
-        // Prefer structured message fields from the API
         let message = null;
         if (parsed) {
             if (parsed.message) message = parsed.message;
@@ -75,7 +63,6 @@ async function request(path, { method = 'GET', body, headers = {} } = {}) {
                 : JSON.stringify(parsed.validationErrors);
             else message = JSON.stringify(parsed);
         }
-        // If API didn't provide a helpful message, map common HTTP statuses to friendly text
         const statusFallback = (status) => {
             switch (status) {
                 case 400: return 'Bad request. Please check your input and try again.';
@@ -93,14 +80,12 @@ async function request(path, { method = 'GET', body, headers = {} } = {}) {
         const err = new Error(finalMessage);
         err.status = res.status;
         err.raw = parsed ?? text;
-        // If unauthorized, trigger logout to clear local state
         if (res.status === 401) {
-            try { await logout('expired'); } catch (_) { /* ignore */ }
+            try { await logout('expired'); } catch (_) { }
         }
         throw err;
     }
     if (res.status === 204) return null;
-    // Try parse JSON, but fall back to text with improved error info
     const text = await res.text();
     if (!text) return null;
     try {
@@ -123,12 +108,10 @@ export const getRecipeById = async (id) => {
     return await request(`/api/recipes/${id}`);
 };
 
-// Get user by ID (returns UserResponse with userName)
 export const getUserById = async (id) => {
     return await request(`/api/users/${id}`);
 };
 
-// User favorites
 export const getUserFavoriteCrops = async (userId) => {
     return await request(`/api/users/${userId}/favorite-crops`);
 };
@@ -175,18 +158,15 @@ export const getCategories = async () => {
 };
 
 export const getIngredients = async () => {
-    // request many items so the client can filter locally for typeahead
     const res = await request('/api/ingredients?size=1000');
     return Array.isArray(res) ? res : (res?.content ?? []);
 };
 
-// Get recipes by ingredient id (returns array or page)
 export const getRecipesByIngredient = async (ingrId) => {
     const res = await request(`/api/recipes/ingredient/${ingrId}?size=1000`);
     return Array.isArray(res) ? res : (res?.content ?? []);
 };
 
-// Authentication
 export const login = async (email, password) => {
     return await request('/api/auth/login', { method: 'POST', body: { email, password } });
 };
@@ -195,21 +175,16 @@ export const register = async (name, email, password) => {
     return await request('/api/auth/register', { method: 'POST', body: { name, email, password } });
 };
 
-// Update user by id
 export const updateUser = async (id, body) => {
-    // Explicitly attach JWT for this call (request() also attaches JWT automatically,
-    // but including it here ensures the header is present when calling directly).
     try {
         const token = await getJwtToken();
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         return await request(`/api/users/${id}`, { method: 'PUT', body, headers });
     } catch (e) {
-        // If reading token fails, still attempt the request without explicit header
         return await request(`/api/users/${id}`, { method: 'PUT', body });
     }
 };
 
-// Delete user by id
 export const deleteUser = async (id) => {
     return await request(`/api/users/${id}`, { method: 'DELETE' });
 };

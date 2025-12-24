@@ -27,7 +27,7 @@ export default function EditAccountScreen({ navigation }) {
         setName(u.userName ?? '');
         setEmail(u.userEmail ?? '');
       } catch (e) {
-        if (__DEV__) console.warn('Failed to load user for edit', e);
+        console.warn('Failed to load user for edit', e);
       }
     })();
     return () => { mounted = false; };
@@ -42,15 +42,13 @@ export default function EditAccountScreen({ navigation }) {
       if (!userIdStr) throw new Error('Missing user id');
       const userId = Number(userIdStr);
       const res = await updateUser(userId, { userName: name.trim(), email: email.trim() });
-      // If backend returned a refreshed token, persist it so the user stays logged in
       try {
         if (res && res.token) {
           await saveJwtToken(String(res.token));
         }
       } catch (err) {
-        if (__DEV__) console.warn('Failed to save refreshed token', err);
+        console.warn('Failed to save refreshed token', err);
       }
-      // persist username and email locally
       try {
         if (res?.id) await saveItem('user_id', String(res.id));
         await saveItem('username', String(name.trim()));
@@ -59,8 +57,7 @@ export default function EditAccountScreen({ navigation }) {
       Alert.alert(t ? t('editAccount.savedTitle') : 'Saved', t ? t('editAccount.savedMessage') : 'Your account was updated');
       navigation.goBack();
     } catch (e) {
-        if (__DEV__) console.warn('Failed to update user', e);
-        // Prefer structured error details returned by the API
+      console.warn('Failed to update user', e);
         const msg = e?.message || (e?.raw ? (typeof e.raw === 'string' ? e.raw : JSON.stringify(e.raw)) : 'Failed to update account');
         Alert.alert(t ? t('editAccount.errorTitle') : 'Error', msg);
     } finally {

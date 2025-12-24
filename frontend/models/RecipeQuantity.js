@@ -1,4 +1,3 @@
-// Frontend RecipeQuantity model (joins Recipe <-> Ingredient with measurement)
 export function createRecipeQuantity(overrides = {}) {
   return {
     id: overrides.id ?? Date.now().toString(),

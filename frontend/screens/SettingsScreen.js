@@ -32,13 +32,11 @@ export default function SettingsScreen({ navigation }) {
   const [tokenExpiry, setTokenExpiry] = useState(null);
   const focused = useIsFocused();
 
-  // translation helper that respects the `enabled` toggle
   const tr = (key, fallback) => {
     if (enabled) return t ? t(key) : (fallback ?? '');
     return fallback ?? (t ? t(key) : '');
   };
 
-  // normalize current/override season into translation keys (spring, summer, fall, winter)
   const seasonKey = (() => {
     try {
       let s = (currentSeason || '').toString().toLowerCase();
@@ -67,7 +65,7 @@ export default function SettingsScreen({ navigation }) {
           setTokenExpiry(null);
           return;
         }
-        // decode JWT payload safely
+        
         try {
           const parts = token.split('.');
           if (parts.length >= 2) {
@@ -102,7 +100,7 @@ export default function SettingsScreen({ navigation }) {
     <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
       <AppHeader rightIcon="close" onRightPress={() => navigation?.goBack()} />
 
-      {/* Settings Title */}
+      
       <View style={styles.titleSection}>
         <Ionicons name="settings" size={24} color={theme.primary} accessible={false} />
         <Text accessibilityRole="header" accessibilityLabel={tr('settings','Settings')} style={[styles.titleText, { color: theme.text }]}>{tr('settings','Settings')}</Text>
@@ -113,7 +111,7 @@ export default function SettingsScreen({ navigation }) {
         {tr('customizeExperience','Customize your experience')}
       </Text>
 
-      {/* Appearance Section */}
+      
       <View style={[styles.section, { backgroundColor: theme.cardBg, borderWidth: 1, borderColor: theme.cardBorder, borderRadius: 12, margin: 12, padding: 16 }]}>
         <View style={styles.sectionHeader}>
           <Ionicons name="color-palette-outline" size={20} color={theme.primary} />
@@ -123,7 +121,7 @@ export default function SettingsScreen({ navigation }) {
           {tr('appearanceSubtitle','Customize how the app looks')}
         </Text>
 
-        {/* Dark Mode Toggle */}
+        
         <View style={[styles.settingRow, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
           <View style={{ flex: 1 }}>
             <Text style={[styles.settingLabel, { color: theme.text }]}>{tr('darkMode','Dark Mode')}</Text>
@@ -141,7 +139,7 @@ export default function SettingsScreen({ navigation }) {
           />
         </View>
 
-        {/* Current Theme Preview */}
+        
         <View style={styles.themePreviewRow}>
           <View style={[styles.previewCardSmall, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
             <View style={[styles.circleIcon, { backgroundColor: theme.activeTabBg,    borderWidth: 1,    borderColor: theme.cardBorder }]}> 
@@ -164,7 +162,7 @@ export default function SettingsScreen({ navigation }) {
           </LinearGradient>
         </View>
 
-        {/* Manual season override for testing */}
+        
         <View style={{ height: 12 }} />
         <View style={[styles.settingRow, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}> 
           <View style={styles.settingInfo}>
@@ -208,7 +206,7 @@ export default function SettingsScreen({ navigation }) {
                     key={season}
                     style={styles.optionRow}
                     onPress={() => {
-                      // store override as the displayed string (keeps existing behavior)
+              
                       setSeasonOverride(season);
                       setShowSeasonOptions(false);
                     }}
@@ -236,7 +234,6 @@ export default function SettingsScreen({ navigation }) {
         )}
       </View>
 
-      {/* Language Section */}
       <View style={[styles.section, { backgroundColor: theme.cardBg, borderWidth: 1, borderColor: theme.cardBorder, borderRadius: 12, margin: 12, padding: 16 }]}>
         <View style={styles.sectionHeader}>
           <Ionicons name="language-outline" size={20} color={theme.primary} />
@@ -244,7 +241,7 @@ export default function SettingsScreen({ navigation }) {
         </View>
         <Text style={[styles.sectionSubtitle, { color: theme.secondaryText }]}>{tr('languageSubtitle','Choose your preferred language and translation options')}</Text>
 
-        {/* Translations Enable Toggle */}
+        
         <View style={[styles.settingRow, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}> 
           <View style={styles.settingInfo}>
             <Text style={[styles.settingLabel, { color: theme.text }]}>{tr('enableTranslations','Enable Translations')}</Text>
@@ -260,7 +257,7 @@ export default function SettingsScreen({ navigation }) {
           />
         </View>
 
-        {/* Display Language */}
+        
         <TouchableOpacity 
           style={[styles.settingRow, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}
           onPress={() => enabled && setShowTranslations(!showTranslations)}
@@ -314,7 +311,7 @@ export default function SettingsScreen({ navigation }) {
         )}
       </View>
       
-      {/* Units & Measurements Section */}
+      
       <View style={[styles.section, { backgroundColor: theme.cardBg, borderWidth: 1, borderColor: theme.cardBorder, borderRadius: 12, margin: 12, padding: 16 }]}> 
         <View style={styles.sectionHeader}>
           <Ionicons name="calculator-outline" size={20} color={theme.primary} />
@@ -322,7 +319,7 @@ export default function SettingsScreen({ navigation }) {
         </View>
         <Text style={[styles.sectionSubtitle, { color: theme.secondaryText }]}>{tr('unitsSubtitle','Choose your preferred measurement system')}</Text>
 
-        {/* Toggle row */}
+        
         <View style={[styles.settingRow, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}> 
           <View style={styles.settingInfo}>
             <Text style={[styles.settingLabel, { color: theme.text }]}>{isImperial ? (t ? t('imperial') : 'Imperial') : (t ? t('metric') : 'Metric (Default)')}</Text>
@@ -342,7 +339,7 @@ export default function SettingsScreen({ navigation }) {
           />
         </View>
 
-        {/* Two-column card showing Metric and Imperial details */}
+        
         <View style={[styles.unitsCard, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
           <View style={styles.unitsColumn}>
             <Text style={[styles.unitsTitle, { color: theme.text }]}>{t ? t('metric') : 'Metric (Default)'}</Text>
@@ -364,7 +361,7 @@ export default function SettingsScreen({ navigation }) {
         </View>
       </View>
 
-      {/* About Section */}
+      
       <View style={[styles.section, styles.lastSection, { backgroundColor: theme.cardBg, borderWidth: 1, borderColor: theme.cardBorder, borderRadius: 12, margin: 12, padding: 16 }]}> 
         <Text style={[styles.sectionTitle, { color: theme.text }]}>{t ? t('about') : 'About'}</Text>
         
@@ -395,7 +392,7 @@ export default function SettingsScreen({ navigation }) {
           onPress={async () => {
             try {
               await logout('manual');
-            } catch (_) { /* ignore */ }
+            } catch (_) { }
             try { navigation.navigate('Login'); } catch (_) {}
           }}
           accessibilityRole="button"

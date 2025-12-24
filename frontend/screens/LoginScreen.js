@@ -36,7 +36,6 @@ export default function LoginScreen() {
       if (res?.token) {
         await saveJwtToken(res.token);
         if (res.id) await saveItem('user_id', String(res.id));
-        // persist username for quick access in UI (backend returns `name`)
         if (res.name) await saveItem('username', String(res.name));
         navigation.navigate('Main');
       } else {
@@ -48,14 +47,13 @@ export default function LoginScreen() {
       console.warn('Sign in failed', e);
       const buildMsg = (err) => {
         if (!err) return 'Sign in failed';
-        // Auth-specific friendly mapping — prioritize HTTP status for auth flows
         if (err.status === 401 || err.status === 403) return 'Invalid email or password';
 
-        // prefer explicit message if it's not generic
+        
         const m = err.message;
         if (m && m !== 'Error') return m;
 
-        // check structured payload
+        
         const raw = err.raw ?? err.cause ?? null;
         try {
           if (raw) {
@@ -68,12 +66,10 @@ export default function LoginScreen() {
             }
           }
         } catch (_) {
-          // ignore parse errors
         }
 
-        // fallback to status + statusText
+        
         if (err.status) return `Error ${err.status}${err.statusText ? `: ${err.statusText}` : ''}`;
-        // last resort
         return String(err) || 'Sign in failed';
       };
 

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useTheme } from '../themes/ThemeContext';
-import { Ionicons } from '@expo/vector-icons';
 import AppHeader from '../components/AppHeader';
 import { getItem } from '../auth/storage';
 import { getRecipes } from '../config/api';
@@ -29,7 +28,7 @@ export default function OwnRecipeScreen({ navigation }) {
         const mine = Array.isArray(all) ? all.filter(r => Number(r?.authorId) === Number(userId)) : [];
         if (mounted) setRecipes(mine);
       } catch (err) {
-        if (__DEV__) console.warn('Failed to load own recipes', err);
+        console.warn('Failed to load own recipes', err);
         if (mounted) setRecipes([]);
       } finally {
         if (mounted) setLoading(false);

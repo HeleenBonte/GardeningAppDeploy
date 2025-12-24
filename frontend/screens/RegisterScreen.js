@@ -33,7 +33,6 @@ export default function RegisterScreen() {
   async function handleRegister() {
     if (!email || !password) return;
     if (password !== confirmPassword) {
-      // small client-side validation; show an error
       setError(t ? t('register.passwordsMismatch') : 'Passwords do not match');
       return;
     }
@@ -69,7 +68,6 @@ export default function RegisterScreen() {
             }
           }
         } catch (_) {}
-        // Registration-specific friendly mapping
         if (err.status === 409) return 'Email already exists';
         if (err.status) return `Error ${err.status}${err.statusText ? `: ${err.statusText}` : ''}`;
         return String(err) || 'Registration failed';

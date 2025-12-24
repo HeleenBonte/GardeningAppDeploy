@@ -36,7 +36,6 @@ export default function useCropDetail({ id, initialCrop = null } = {}) {
     const name = crop.name && String(crop.name).toLowerCase();
 
     return recipes.filter((r) => {
-      // Heuristics: recipe may include crop id in `crops` or `ingredients`, or crop name in text fields
       if (Array.isArray(r.crops) && r.crops.some((c) => String(c) === String(crop.id) || (c && c.id && String(c.id) === String(crop.id)))) return true;
       if (Array.isArray(r.ingredients) && r.ingredients.some((ing) => (ing.cropId && String(ing.cropId) === String(crop.id)) || (ing.crop && String(ing.crop).toLowerCase().includes(name)) || (ing.name && String(ing.name).toLowerCase().includes(name)))) return true;
       if (r.name && name && String(r.name).toLowerCase().includes(name)) return true;
@@ -45,13 +44,11 @@ export default function useCropDetail({ id, initialCrop = null } = {}) {
     });
   }, [recipes, crop]);
 
-  // Fetch related recipes from backend by ingredient ids associated with this crop.
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
         if (!crop) return;
-        // fetch ingredients, find those that reference this crop
         const allIngr = await getIngredients();
         const matching = Array.isArray(allIngr) ? allIngr.filter(i => String(i.cropId) === String(crop.id)) : [];
         if (!matching.length) return;
@@ -61,27 +58,25 @@ export default function useCropDetail({ id, initialCrop = null } = {}) {
             const res = await getRecipesByIngredient(ing.id);
             const list = Array.isArray(res) ? res : (res?.content ?? []);
             (list || []).forEach(r => { if (r && r.id) map.set(String(r.id), r); });
-          } catch (e) {
-            if (__DEV__) console.warn('getRecipesByIngredient failed for', ing.id, e);
+            } catch (e) {
+            console.warn('getRecipesByIngredient failed for', ing.id, e);
           }
         }
         if (!mounted) return;
         const arr = Array.from(map.values());
         if (arr.length) setRemoteRelated(arr);
       } catch (e) {
-        if (__DEV__) console.warn('Failed to fetch related recipes by ingredient', e);
+        console.warn('Failed to fetch related recipes by ingredient', e);
       }
     })();
     return () => { mounted = false; };
   }, [crop]);
 
-  if (__DEV__) {
-    try {
-      const fallbackNames = (relatedRecipes || []).slice(0, 6).map(r => r.name || r.recipeName || r.id);
-      const remoteNames = (remoteRelated || []).slice(0, 6).map(r => r.name || r.recipeName || r.id);
-      console.debug('[useCropDetail] crop=', crop?.name, 'recipes total=', Array.isArray(recipes) ? recipes.length : 0, 'relatedFallback=', (relatedRecipes || []).length, 'relatedRemote=', (remoteRelated || []).length, 'sampleFallback=', fallbackNames, 'sampleRemote=', remoteNames);
-    } catch (e) { /* ignore */ }
-  }
+  try {
+    const fallbackNames = (relatedRecipes || []).slice(0, 6).map(r => r.name || r.recipeName || r.id);
+    const remoteNames = (remoteRelated || []).slice(0, 6).map(r => r.name || r.recipeName || r.id);
+    console.debug('[useCropDetail] crop=', crop?.name, 'recipes total=', Array.isArray(recipes) ? recipes.length : 0, 'relatedFallback=', (relatedRecipes || []).length, 'relatedRemote=', (remoteRelated || []).length, 'sampleFallback=', fallbackNames, 'sampleRemote=', remoteNames);
+  } catch (e) {  }
 
   const reload = useCallback(async () => {
     await fetchCrop();
@@ -90,7 +85,6 @@ export default function useCropDetail({ id, initialCrop = null } = {}) {
 
   return {
     crop,
-    // prefer server-provided related recipes when available
     relatedRecipes: Array.isArray(remoteRelated) && remoteRelated.length ? remoteRelated : relatedRecipes,
     loading: loading || recipesLoading,
     error: error || recipesError,

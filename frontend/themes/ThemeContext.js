@@ -103,17 +103,15 @@ const createDarkTheme = (season) => {
 
 export const ThemeProvider = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
-  // Dev Override
   const [seasonOverride, setSeasonOverride] = useState(null);
 
   const toggleTheme = () => {
     setIsDarkMode((prev) => {
       const next = !prev;
-      // persist preference (light/dark)
       try {
         persistTheme(next ? 'dark' : 'light');
       } catch (e) {
-        // ignore persistence errors
+        
       }
       return next;
     });
@@ -121,35 +119,24 @@ export const ThemeProvider = ({ children }) => {
 
 
   const getCurrentSeason = (date = new Date()) => {
-    const month = date.getMonth(); // 0 = Jan
+    const month = date.getMonth();
     const day = date.getDate();
 
-    const isOnOrAfter = (m, d) => (month > m) || (month === m && day >= d);
-
-
-    // Winter: Dec 21 - Mar 19
     if ( (month === 11 && day >= 21) || month === 0 || month === 1 || (month === 2 && day < 20) ) {
       return 'Winter';
     }
-
-    // Spring: Mar 20 - Jun 20
     if ( (month === 2 && day >= 20) || month === 3 || month === 4 || (month === 5 && day < 21) ) {
       return 'Spring';
     }
-
-    // Summer: Jun 21 - Sep 22
     if ( (month === 5 && day >= 21) || month === 6 || month === 7 || (month === 8 && day < 23) ) {
       return 'Summer';
     }
-
-    // Fall: Sep 23 - Dec 20
     return 'Fall';
   };
 
   const currentSeason = seasonOverride || getCurrentSeason();
   const theme = isDarkMode ? createDarkTheme(currentSeason) : createLightTheme(currentSeason);
 
-  // Load persisted theme preference on mount
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -159,7 +146,7 @@ export const ThemeProvider = ({ children }) => {
         if (saved === 'dark') setIsDarkMode(true);
         else if (saved === 'light') setIsDarkMode(false);
       } catch (e) {
-        // ignore
+        
       }
     })();
     return () => { mounted = false; };

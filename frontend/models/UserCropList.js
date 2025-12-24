@@ -1,4 +1,3 @@
-// Frontend representation of a user-crop join table
 export function createUserCropList(overrides = {}) {
   return {
     userId: overrides.userId ?? null,

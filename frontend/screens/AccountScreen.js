@@ -53,7 +53,7 @@ export default function AccountScreen({ navigation }) {
         setCreatedRecipesCount(0);
       }
     } catch (e) {
-      if (__DEV__) console.warn('Failed to load account details', e);
+      console.warn('Failed to load account details', e);
     } finally {
       setRefreshing(false);
     }
@@ -186,7 +186,7 @@ export default function AccountScreen({ navigation }) {
                       try { await logout('deleted'); } catch (_) {}
                       try { navigation.navigate('Login'); } catch (_) {}
                     } catch (e) {
-                      if (__DEV__) console.warn('Failed to delete account', e);
+                      console.warn('Failed to delete account', e);
                       Alert.alert((t && t('error')) || 'Error', e?.message || ((t && t('account.removeFailed')) || 'Failed to remove account.'));
                     }
                   }

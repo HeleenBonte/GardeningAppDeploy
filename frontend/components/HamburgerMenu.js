@@ -30,7 +30,6 @@ export default function HamburgerMenu({ visible, onClose, onNavigate, onToggleTh
     try {
       await logout('manual');
     } catch (e) {
-      // ignore
     }
     setIsLoggedIn(false);
     onClose();

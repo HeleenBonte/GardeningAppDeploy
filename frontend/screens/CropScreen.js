@@ -115,7 +115,6 @@ export default function CropScreen() {
 								<Text style={[styles.filterLabel, { color: theme.text }]}>{label}</Text>
 								<Ionicons name={openFilter === idx ? 'chevron-up' : 'chevron-down'} size={18} color={theme.secondaryText} accessible={false} />
 							</TouchableOpacity>
-							{/* month picker for the first filter (Sowing/Planting Period) */}
 							{idx === 0 && openFilter === idx && (
 								<View style={styles.monthsWrapper}>
 									{months.map((m) => {
@@ -141,7 +140,6 @@ export default function CropScreen() {
 								</View>
 						)}
 
-						{/* harvest month picker for the second filter */}
 						{idx === 1 && openFilter === idx && (
 							<View style={styles.monthsWrapper}>
 								{months.map((m) => {
@@ -167,7 +165,6 @@ export default function CropScreen() {
 							</View>
 						)}
 
-						{/* growing location multi-select for the third filter */}
 						{idx === 2 && openFilter === idx && (
 							<View style={styles.monthsWrapper}>
 								{locationOptions.map((opt) => {

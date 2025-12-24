@@ -13,17 +13,16 @@ export default function AppHeader({ title = 'Gardeners of the Galaxy', rightIcon
 	const [menuVisible, setMenuVisible] = useState(false);
 
 	function handleRightPress() {
-		if (__DEV__) console.debug('[AppHeader] handleRightPress rightIcon=', rightIcon, 'hasHandler=', !!onRightPress);
+		console.debug('[AppHeader] handleRightPress rightIcon=', rightIcon, 'hasHandler=', !!onRightPress);
 		if (rightIcon === 'menu') {
 			setMenuVisible(true);
 			return;
 		}
 
-		// If this header is rendered on the RecipeDetail route, force reset to RecipesList
 		try {
 			if (rightIcon === 'close' && route?.name === 'RecipeDetail') {
 				if (navigationRef && navigationRef.isReady && navigationRef.isReady()) {
-					if (__DEV__) console.debug('[AppHeader] resetting root to Main->Recipes->RecipesList');
+					console.debug('[AppHeader] resetting root to Main->Recipes->RecipesList');
 					navigationRef.resetRoot({ index: 0, routes: [{ name: 'Main', state: { index: 0, routes: [{ name: 'Recipes', state: { index: 0, routes: [{ name: 'RecipesList' }] } }] } }] });
 					return;
 				}

@@ -30,7 +30,6 @@ const common = StyleSheet.create({
   stateWrapper: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
   listContent: { paddingBottom: 24 },
 
-  /* Safe aliases to aid incremental migration */
   headerWrap: { padding: 18 },
   wrapper: { flex: 1 },
   titleText: { fontSize: 26, fontWeight: '700' },

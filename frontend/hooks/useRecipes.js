@@ -12,7 +12,7 @@ export default function useRecipes() {
     try {
       const res = await getRecipes();
       const list = Array.isArray(res) ? res : [];
-      if (__DEV__) console.debug('[useRecipes] fetched recipes:', Array.isArray(list) ? list.length : 0);
+      console.debug('[useRecipes] fetched recipes:', Array.isArray(list) ? list.length : 0);
       setRecipes(list);
     } catch (err) {
       setError(err?.message || String(err));

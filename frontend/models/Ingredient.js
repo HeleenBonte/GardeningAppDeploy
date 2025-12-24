@@ -1,4 +1,3 @@
-// Frontend Ingredient model
 export function createIngredient(overrides = {}) {
   return {
     id: overrides.id ?? Date.now().toString(),

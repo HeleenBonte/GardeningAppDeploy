@@ -27,7 +27,6 @@ export const isInRange = (idx, startVal, endVal) => {
   const e = monthIndex(endVal);
   if (s === -1 || e === -1) return false;
   if (s <= e) return idx >= s && idx <= e;
-  // wrap-around (e.g., Nov - Feb)
   return idx >= s || idx <= e;
 };
 

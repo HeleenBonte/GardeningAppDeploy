@@ -1,18 +1,12 @@
 import * as SecureStore from 'expo-secure-store';
 
-// Small helper around expo-secure-store for storing sensitive auth values.
-// Note: install with `expo install expo-secure-store` if not already present.
-
-// Keys used in SecureStore
 const REFRESH_TOKEN_KEY = 'refresh_token';
 const ACCESS_TOKEN_KEY = 'access_token';
-const JWT_TOKEN_KEY = 'jwt_token'; // persistent JWT storage key (use with caution)
+const JWT_TOKEN_KEY = 'jwt_token';
 
-// in-memory access token (kept here for short-lived access tokens)
 let _inMemoryAccessToken = null;
-// timer for scheduled auto-logout
 let _autoLogoutTimer = null;
-const MAX_TIMEOUT = 2147483647; // max setTimeout (~24.8 days)
+const MAX_TIMEOUT = 2147483647;
 
 export async function isAvailable() {
   try {
@@ -35,15 +29,10 @@ export async function deleteRefreshToken() {
   return SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
 }
 
-// Persist a JWT token. Some APIs require the JWT to be present on every request
-// and you indicated your backend uses JWTs exclusively — storing them in
-// SecureStore is acceptable for mobile apps, but be aware of platform
-// differences (iOS Keychain / Android Keystore) and uninstall behavior.
 export async function saveJwtToken(token) {
   if (!token && token !== '') return;
   try {
     const res = await SecureStore.setItemAsync(JWT_TOKEN_KEY, token);
-    // schedule auto-logout based on token expiry
     try { scheduleAutoLogoutForToken(token); } catch (_) {}
     return res;
   } catch (e) {
@@ -69,33 +58,32 @@ function clearAutoLogout() {
 }
 
 function scheduleAutoLogoutForToken(token) {
-  try {
-    if (!token) return;
-    const parts = token.split('.');
-    if (parts.length < 2) return;
-    const payloadB64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    const pad = payloadB64.length % 4;
-    const padded = pad ? payloadB64 + '='.repeat(4 - pad) : payloadB64;
-    let json = null;
     try {
-      const decoded = typeof atob === 'function' ? atob(padded) : null;
-      if (decoded) {
-        try {
-          json = decodeURIComponent(Array.prototype.map.call(decoded, (c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-        } catch (e) {
-          json = decoded;
+      if (!token) return;
+      const parts = token.split('.');
+      if (parts.length < 2) return;
+      const payloadB64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const pad = payloadB64.length % 4;
+      const padded = pad ? payloadB64 + '='.repeat(4 - pad) : payloadB64;
+      let json = null;
+      try {
+        const decoded = typeof atob === 'function' ? atob(padded) : null;
+        if (decoded) {
+          try {
+            json = decodeURIComponent(Array.prototype.map.call(decoded, (c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+          } catch (e) {
+            json = decoded;
+          }
         }
+      } catch (e) {
       }
-    } catch (e) {
-      if (__DEV__) console.warn('JWT decode failed', e);
-    }
-    if (!json) return;
-    const obj = JSON.parse(json);
-    if (!obj || !obj.exp) return;
-    const expMs = Number(obj.exp) * 1000;
-    const now = Date.now();
-    let delay = expMs - now;
-    if (delay <= 0) {
+      if (!json) return;
+      const obj = JSON.parse(json);
+      if (!obj || !obj.exp) return;
+      const expMs = Number(obj.exp) * 1000;
+      const now = Date.now();
+      let delay = expMs - now;
+      if (delay <= 0) {
       (async () => { try { await logout('expired'); } catch (_) {} })();
       return;
     }
@@ -117,11 +105,9 @@ function scheduleAutoLogoutForToken(token) {
       }, delay);
     }
   } catch (e) {
-    if (__DEV__) console.warn('Failed to schedule auto-logout', e);
   }
 }
 
-// Access token helpers: recommended to keep access token in memory only.
 export function setAccessTokenInMemory(token) {
   _inMemoryAccessToken = token;
 }
@@ -134,7 +120,6 @@ export function clearAccessTokenInMemory() {
   _inMemoryAccessToken = null;
 }
 
-// Generic helpers if you need to store other small secrets
 export async function saveItem(key, value) {
   return SecureStore.setItemAsync(key, String(value));
 }
@@ -147,26 +132,22 @@ export async function deleteItem(key) {
   return SecureStore.deleteItemAsync(key);
 }
 
-// Logout helpers: clear all auth-related persisted items and notify listeners
 const LOGOUT_KEYS = [REFRESH_TOKEN_KEY, ACCESS_TOKEN_KEY, JWT_TOKEN_KEY, 'user_id', 'username'];
 let _logoutListeners = [];
 
 export async function logout(reason = null) {
   try {
-    // delete known keys
     await Promise.all(LOGOUT_KEYS.map(k => SecureStore.deleteItemAsync(k)));
   } catch (e) {
-    // ignore
   }
-  // clear in-memory token
+
   clearAccessTokenInMemory();
 
-  // notify listeners (provide optional reason)
   try {
     _logoutListeners.forEach((cb) => {
-      try { cb(reason); } catch (_) { /* ignore listener errors */ }
+      try { cb(reason); } catch (_) {  }
     });
-  } catch (_) { /* ignore */ }
+  } catch (_) {  }
 }
 
 export function onLogout(callback) {
@@ -196,7 +177,6 @@ export default {
   onLogout,
 };
 
-// On module load, try to schedule auto-logout if a token is already present
 (async () => {
   try {
     const t = await getJwtToken();

@@ -26,7 +26,6 @@ export default function FavoritesScreen() {
     (async () => {
       const id = await getItem('user_id');
       if (!id) {
-        // if not logged in, navigate to Login (tab listener prevents landing on Favorites)
         navigation.navigate('Login');
         return;
       }

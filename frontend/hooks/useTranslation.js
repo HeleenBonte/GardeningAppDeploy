@@ -5,7 +5,6 @@ import storage from '../auth/storage';
 const STORAGE_KEY = 'app_language';
 const STORAGE_ENABLED_KEY = 'translations_enabled';
 
-// Module-level shared state so multiple hook instances stay in sync
 let sharedLanguage = 'en';
 let sharedEnabled = false;
 let sharedLoading = true;
@@ -26,14 +25,12 @@ async function initShared() {
     if (saved && translations[saved]) sharedLanguage = saved;
     if (savedEnabled != null) sharedEnabled = String(savedEnabled) === 'true';
   } catch (_) {
-    // ignore
   } finally {
     sharedLoading = false;
     notifyAll();
   }
 }
 
-// start initialization once
 initShared();
 
 export default function useTranslation() {
@@ -50,7 +47,6 @@ export default function useTranslation() {
       setLoading(ld);
     };
     subscribers.add(cb);
-    // immediately sync current shared state
     cb({ language: sharedLanguage, enabled: sharedEnabled, loading: sharedLoading });
     return () => { mounted = false; subscribers.delete(cb); };
   }, []);

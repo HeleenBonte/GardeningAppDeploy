@@ -1,4 +1,3 @@
-// Frontend Recipe model helpers
 export function createRecipe(overrides = {}) {
   return {
     id: overrides.id ?? Date.now().toString(),
@@ -10,8 +9,8 @@ export function createRecipe(overrides = {}) {
     courseId: overrides.courseId ?? null,
     author: overrides.author ?? null,
     image: overrides.image ?? null,
-    steps: overrides.steps ?? [], // array of RecipeStep objects
-    ingredients: overrides.ingredients ?? [], // array of RecipeQuantity objects
+    steps: overrides.steps ?? [],
+    ingredients: overrides.ingredients ?? [],
   };
 }
 

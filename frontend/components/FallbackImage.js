@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { Image } from 'react-native';
 
-// A small set of royalty-free Unsplash images used as fallbacks.
 const FALLBACKS = {
   crop: [
     'https://images.unsplash.com/photo-1566804770468-867f6158bda5?q=80&w=1170&auto=format&fit=crop',
@@ -20,9 +19,8 @@ const FALLBACKS = {
 function pick(list, seed) {
   if (!Array.isArray(list) || list.length === 0) return null;
   if (seed == null) return list[Math.floor(Math.random() * list.length)];
-  // deterministic pick when seed provided (e.g., id)
   let h = 0; const s = String(seed);
-  for (let i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i); // simple hash
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i);
   const idx = Math.abs(h) % list.length;
   return list[idx];
 }

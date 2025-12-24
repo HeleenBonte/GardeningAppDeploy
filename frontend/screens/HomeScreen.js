@@ -34,14 +34,14 @@ export default function HomeScreen({ navigation }) {
         if (!mounted) return;
         setIsLoggedIn(true);
 
-        // Try to read cached username first
+        
         const cachedName = await getItem('username');
         if (cachedName) {
           setUsername(cachedName);
           return;
         }
 
-        // If no cached username, try to fetch using saved user id
+        
         const userId = await getItem('user_id');
         if (userId) {
           try {
@@ -51,13 +51,12 @@ export default function HomeScreen({ navigation }) {
               await saveItem('username', String(name));
               if (mounted) setUsername(name);
             }
-          } catch (e) {
-            // ignore errors - user will see generic welcome
-            if (__DEV__) console.warn('Failed to fetch user for welcome', e);
+            } catch (e) {
+            console.warn('Failed to fetch user for welcome', e);
           }
         }
       } catch (e) {
-        if (__DEV__) console.warn('Failed to load auth info', e);
+        console.warn('Failed to load auth info', e);
       }
     })();
     return () => { mounted = false; };
@@ -66,7 +65,7 @@ export default function HomeScreen({ navigation }) {
   const [favoriteCropsCount, setFavoriteCropsCount] = useState(0);
   const [favoriteRecipesCount, setFavoriteRecipesCount] = useState(0);
 
-  // load favorite counts when logged in
+  
   useEffect(() => {
     let mounted = true;
     if (!isLoggedIn) {
@@ -88,7 +87,7 @@ export default function HomeScreen({ navigation }) {
         setFavoriteCropsCount(Array.isArray(crops) ? crops.length : (crops?.length ?? 0));
         setFavoriteRecipesCount(Array.isArray(recipes) ? recipes.length : (recipes?.length ?? 0));
       } catch (e) {
-        if (__DEV__) console.warn('Failed to load favorite counts', e);
+        console.warn('Failed to load favorite counts', e);
       }
     })();
     return () => { mounted = false; };
@@ -121,7 +120,6 @@ export default function HomeScreen({ navigation }) {
       <AppHeader />
 
 
-      {/* Welcome Section */}
       <View style={styles.welcomeSection}>
         <Text
           style={[styles.welcomeText, { color: theme.text }]}
@@ -138,7 +136,6 @@ export default function HomeScreen({ navigation }) {
         </Text>
       </View>
 
-      {/* Favorite Crops Card */}
       <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
         <View style={styles.cardBody}>
           <View style={styles.cardHeader}>
@@ -151,7 +148,6 @@ export default function HomeScreen({ navigation }) {
         </View>
       </View>
 
-      {/* Favorite Recipes Card */}
       <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
         <View style={styles.cardBody}>
           <View style={styles.cardHeader}>
@@ -164,7 +160,6 @@ export default function HomeScreen({ navigation }) {
         </View>
       </View>
 
-      {/* Current Season Section */}
       <View style={[styles.seasonCard, { backgroundColor: theme.seasonCardBg, borderColor: theme.cardBorder }]}>
         <View style={styles.seasonHeader}>
           <Text
@@ -186,7 +181,6 @@ export default function HomeScreen({ navigation }) {
 
       </View>
 
-      {/* Explore Crops Section */}
       <View style={[styles.featureCard, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
         <Image
           source={{ uri: 'https://images.unsplash.com/photo-1438109382753-8368e7e1e7cf?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' }}
@@ -216,7 +210,6 @@ export default function HomeScreen({ navigation }) {
         </View>
       </View>
 
-      {/* Discover Recipes Section */}
       <View style={[styles.featureCard, { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
         <Image
           source={{ uri: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' }}

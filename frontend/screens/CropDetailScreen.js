@@ -21,7 +21,7 @@ export default function CropDetailScreen() {
   const { crop, relatedRecipes, loading, error, reload } = useCropDetail({ id: cropId, initialCrop: routeCrop });
   const { t } = useTranslation();
 
-  // month helpers moved to ../lib/months.js
+  
 
 
   function handleBack() {
@@ -34,7 +34,6 @@ export default function CropDetailScreen() {
     else navigation.navigate('Recipes', { screen: 'RecipeDetail', params: { id } });
   }
 
-  // If this detail screen loses focus (user switches tabs), ensure we close it
   React.useEffect(() => {
     const unsub = navigation.addListener('blur', () => {
       try {
@@ -77,7 +76,6 @@ export default function CropDetailScreen() {
         const ids = Array.isArray(res) ? res.map(r => r.id) : (res?.map ? res.map(r => r.id) : []);
         if (mounted) setFavSaved(ids.includes(cropId));
       } catch (err) {
-        // ignore
       }
     })();
     return () => { mounted = false; };
@@ -87,9 +85,8 @@ export default function CropDetailScreen() {
     if (!crop?.id) return;
     setFavLoading(true);
     try {
-      // debug: check jwt presence
       const dbgToken = await getItem('jwt_token');
-      if (__DEV__) console.log('[CropDetail] jwt present?', !!dbgToken, 'userId stored?', await getItem('user_id'));
+      console.log('[CropDetail] jwt present?', !!dbgToken, 'userId stored?', await getItem('user_id'));
       const userId = await getItem('user_id');
       if (!userId) {
         Alert.alert(
@@ -112,7 +109,6 @@ export default function CropDetailScreen() {
       }
     } catch (err) {
       console.warn('Failed to add favorite crop', err);
-      // optional: show inline error or toast; keep simple for now
     } finally {
       setFavLoading(false);
     }
@@ -313,7 +309,6 @@ const localStyles = StyleSheet.create({
   timelineLabel: { fontSize: 15, fontWeight: '600' },
   timelineValue: { fontSize: 14 },
   cardContent: { marginTop: 4 },
-  /* ensure full card has inner padding so text doesn't touch borders */
   cardPadded: { padding: 14 },
   listText: { flex: 1 },
   recipesSection: { marginTop: 16 },

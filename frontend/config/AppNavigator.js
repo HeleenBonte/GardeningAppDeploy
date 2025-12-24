@@ -81,20 +81,16 @@ function MainTabs() {
         listeners={({ navigation }) => ({
           tabPress: (e) => {
             (async () => {
-              // capture the currently selected tab so we can restore it
               const state = navigation.getState && navigation.getState();
               const prevRoute = state && state.routes && state.routes[state.index] && state.routes[state.index].name;
               try {
                 const token = await getJwtToken();
                 if (!token) {
                   e.preventDefault();
-                  // restore previously selected tab (if any) immediately
                   if (prevRoute) navigation.navigate(prevRoute);
-                  // navigate to Login on the parent stack so Login is on top
                   const parent = navigation.getParent && navigation.getParent();
                   if (parent && parent.navigate) parent.navigate('Login');
                 }
-                // if token exists, allow default tab behavior (navigate to Favorites tab)
               } catch (err) {
                 e.preventDefault();
                 const parent = navigation.getParent && navigation.getParent();
@@ -133,13 +129,11 @@ export default function AppNavigator() {
   React.useEffect(() => {
     const unsub = onLogout((reason) => {
       try {
-        // Show an alert if logout was caused by token expiry
         if (reason === 'expired') {
-          try { Alert.alert('Session expired', 'Your login has expired'); } catch (_) { /* ignore */ }
+          try { Alert.alert('Session expired', 'Your login has expired'); } catch (_) { }
         }
 
         if (navigationRef.isReady && navigationRef.isReady()) {
-          // reset navigation stack and go to Login
           if (navigationRef.resetRoot) {
             navigationRef.resetRoot({ index: 0, routes: [{ name: 'Login' }] });
           } else {
@@ -147,7 +141,6 @@ export default function AppNavigator() {
           }
         }
       } catch (e) {
-        // ignore navigation errors
       }
     });
     return () => unsub();

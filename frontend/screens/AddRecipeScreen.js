@@ -61,15 +61,14 @@ export default function AddRecipeScreen({ navigation }) {
   function displayMeasurementLabel(name) {
     if (!name) return '';
     const nm = String(name).toLowerCase();
-    // keep tsp/tbsp and pieces as-is
+    
     if (/\btsp\b/.test(nm)) return 'tsp';
     if (/\btbsp\b/.test(nm)) return 'tbsp';
     if (/\b(piece|pieces|pcs|pc|count|stück|st)\b/.test(nm)) return name;
-    // kilograms -> show lb for imperial
     if (nm.includes('kg') || nm.includes('kilogram')) return unitSystem === 'imperial' ? 'lbs' : name;
-    // grams -> show oz for imperial (we display ounces for smaller weights)
+    
     if (nm.includes('g') || nm.includes('gram')) return unitSystem === 'imperial' ? 'oz' : name;
-    // milliliters -> show fl oz for imperial
+    
     if (nm.includes('ml') || nm.includes('milliliter') || nm.includes('l') || nm.includes('liter')) return unitSystem === 'imperial' ? 'fl oz' : name;
     return name;
   }
@@ -140,47 +139,40 @@ export default function AddRecipeScreen({ navigation }) {
           const measurementId = i.measurementId ? Number(i.measurementId) : null;
           const rawQty = i.quantity === '' || i.quantity == null ? null : Number(i.quantity);
           let metricQty = rawQty;
-          try {
-            const mObj = measurements.find(m => String(m.id) === String(measurementId));
-            const mName = (mObj?.name || '').toString().toLowerCase();
-            if (rawQty != null && !Number.isNaN(rawQty)) {
-              // weight
-              if (mName.includes('kg') || mName.includes('kilogram')) {
-                // measurements in kilograms: store as kilograms in payload (DB expects kg)
-                if (unitSystem === 'imperial') {
-                  // user enters pounds (lb) when UI shows lb -> convert pounds to kilograms
-                  metricQty = unitConverter.poundsToGrams(rawQty) / 1000; // pounds -> grams -> kg
+              try {
+                const mObj = measurements.find(m => String(m.id) === String(measurementId));
+                const mName = (mObj?.name || '').toString().toLowerCase();
+                if (rawQty != null && !Number.isNaN(rawQty)) {
+                  if (mName.includes('kg') || mName.includes('kilogram')) {
+                    if (unitSystem === 'imperial') {
+                      metricQty = unitConverter.poundsToGrams(rawQty) / 1000;
+                    } else {
+                      metricQty = rawQty;
+                    }
+                  } else if (mName.includes('g') || mName.includes('gram')) {
+                    if (unitSystem === 'imperial') {
+                      metricQty = unitConverter.ouncesToGrams(rawQty);
+                    } else {
+                      metricQty = rawQty;
+                    }
+                  } else if (mName.includes('l') || mName.includes('liter')) {
+                    if (unitSystem === 'imperial') {
+                      metricQty = unitConverter.flOzToMl(rawQty);
+                    } else {
+                      metricQty = rawQty * 1000;
+                    }
+                  } else if (mName.includes('ml') || mName.includes('milliliter')) {
+                    if (unitSystem === 'imperial') {
+                      metricQty = unitConverter.flOzToMl(rawQty);
+                    } else {
+                      metricQty = rawQty;
+                    }
+                  } else {
+                    metricQty = rawQty;
+                  }
                 } else {
-                  metricQty = rawQty; // already in kg
+                  metricQty = null;
                 }
-              } else if (mName.includes('g') || mName.includes('gram')) {
-                // measurements in grams
-                if (unitSystem === 'imperial') {
-                  // assume input is in ounces -> convert oz to grams
-                  metricQty = unitConverter.ouncesToGrams(rawQty);
-                } else {
-                  metricQty = rawQty;
-                }
-              } else if (mName.includes('l') || mName.includes('liter')) {
-                // liters -> store ml
-                if (unitSystem === 'imperial') {
-                  metricQty = unitConverter.flOzToMl(rawQty);
-                } else {
-                  metricQty = rawQty * 1000;
-                }
-              } else if (mName.includes('ml') || mName.includes('milliliter')) {
-                if (unitSystem === 'imperial') {
-                  metricQty = unitConverter.flOzToMl(rawQty);
-                } else {
-                  metricQty = rawQty;
-                }
-              } else {
-                // tsp, tbsp, pieces, count etc. saved as-is
-                metricQty = rawQty;
-              }
-            } else {
-              metricQty = null;
-            }
           } catch (e) {
             metricQty = rawQty;
           }
@@ -190,7 +182,7 @@ export default function AddRecipeScreen({ navigation }) {
         steps: steps.map((s, idx) => ({ stepNumber: idx + 1, description: s.description })),
       };
 
-      // Basic validation (image URL is optional)
+      
       if (!payload.name || !payload.description || !payload.prepTime || !payload.cookTime) {
         Alert.alert('Missing fields', 'Please fill in the required fields (name, description, prep time, cook time).');
         return;
@@ -200,7 +192,7 @@ export default function AddRecipeScreen({ navigation }) {
         return;
       }
 
-      // Call API
+      
       const res = await createRecipe(payload);
       const createdName = res?.name ?? name;
       Alert.alert('Recipe created', `${createdName} created`);
@@ -240,7 +232,7 @@ export default function AddRecipeScreen({ navigation }) {
           });
         }
       } catch (e) {
-        // ignore
+      
       }
     }, 120);
   }
@@ -474,7 +466,6 @@ export default function AddRecipeScreen({ navigation }) {
                 onChangeText={(v) => updateStep(s.id, v)}
                 style={[styles.input, { flex: 1, backgroundColor: theme.imagePlaceholderBg, color: theme.text }]}
                 onFocus={() => {
-                  // Give keyboard a moment to open, then measure & scroll
                   setTimeout(() => {
                     try {
                       const node = stepInputRefs.current[s.id];
@@ -498,7 +489,6 @@ export default function AddRecipeScreen({ navigation }) {
                         });
                       }
                     } catch (e) {
-                      // ignore measurement errors
                     }
                   }, 120);
                 }}

@@ -64,19 +64,16 @@ export default function RecipeDetailScreen({ route, navigation }){
     return () => { mounted = false; };
   }, [id]);
 
-  // Close detail if the screen loses focus (e.g., user switches tabs)
   useEffect(() => {
     const unsub = navigation.addListener('blur', () => {
       try {
         handleClose();
       } catch (e) {
-        // ignore
       }
     });
     return unsub;
   }, [navigation]);
 
-  // determine whether this recipe is already saved by the current user
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -87,7 +84,7 @@ export default function RecipeDetailScreen({ route, navigation }){
         const ids = Array.isArray(res) ? res.map(r => r.id) : (res?.map ? res.map(r => r.id) : []);
         if (mounted) setFavSaved(ids.includes(recipe.id));
       } catch (err) {
-        // ignore
+        
       }
     })();
     return () => { mounted = false; };
@@ -135,11 +132,11 @@ export default function RecipeDetailScreen({ route, navigation }){
         navigation.goBack();
         return;
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) {  }
 
-    if (__DEV__) console.debug('[RecipeDetail] handleClose no back history, attempting to reset app/root to RecipesList');
+    console.debug('[RecipeDetail] handleClose no back history, attempting to reset app/root to RecipesList');
 
-    // Strong action: reset root to Main -> Recipes -> RecipesList so nested stack can't reopen RecipeDetail
+    
     try {
       if (navigationRef && navigationRef.isReady && navigationRef.isReady()) {
         navigationRef.resetRoot({
@@ -164,16 +161,15 @@ export default function RecipeDetailScreen({ route, navigation }){
         });
         return;
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) {  }
 
-    // If resetRoot isn't available, try switching tabs via parent (jumpTo preferable)
+    
     try {
       const parent = navigation.getParent && navigation.getParent();
       if (parent) {
-        if (__DEV__) console.debug('[RecipeDetail] parent navigator found, trying jumpTo Recipes');
+      console.debug('[RecipeDetail] parent navigator found, trying jumpTo Recipes');
         if (parent.jumpTo) {
           parent.jumpTo('Recipes');
-          // ensure nested stack shows list instead of previous detail
           try { parent.navigate('Recipes', { screen: 'RecipesList' }); } catch (_) {}
           return;
         }
@@ -182,11 +178,10 @@ export default function RecipeDetailScreen({ route, navigation }){
           return;
         }
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) { }
 
-    // Final fallbacks
-    try { navigation.navigate('Recipes', { screen: 'RecipesList' }); return; } catch (e) { /* ignore */ }
-    try { navigation.navigate('Main'); } catch (e) { /* ignore */ }
+    try { navigation.navigate('Recipes', { screen: 'RecipesList' }); return; } catch (e) {  }
+    try { navigation.navigate('Main'); } catch (e) {  }
   }
 
   return (
@@ -248,26 +243,23 @@ export default function RecipeDetailScreen({ route, navigation }){
                 const measurementName = (q.measurement?.measurementName || q.measurement?.name || q.measurementName || q.measurementResponse?.name || q.measurementResponse?.measurementName || '').toString().toLowerCase();
                 const ingredient = q.ingredient?.ingredientName || q.ingredient?.name || q.ingredientName || q.ingredientResponse?.name || q.ingredientResponse?.ingredientName || '';
 
-                // infer measurement type: weight, volume, temperature, or count
+                
                 let type = 'count';
                 if (measurementName.includes('g') || measurementName.includes('gram') || measurementName.includes('kg') || measurementName.includes('kilogram')) type = 'weight';
                 else if (measurementName.includes('ml') || measurementName.includes('l') || measurementName.includes('tbsp') || measurementName.includes('tsp') || measurementName.includes('fl') || measurementName.includes('ounce')) type = 'volume';
                 else if (measurementName.includes('°c') || measurementName.includes('celsius')) type = 'temperature';
 
-                // prefer tsp/tbsp units unchanged when measurementName mentions them
                 const preferredUnit = measurementName.includes('tsp') ? 'tsp' : (measurementName.includes('tbsp') ? 'tbsp' : null);
 
-                // Preserve "pieces"/count units from DB (pcs, pc, piece, pieces)
                 const isPieces = /\b(piece|pieces|pcs|pc|count|stück|st)\b/i.test(measurementName);
                 let display;
                 if (isPieces) {
                   const unitLabel = measurementName || 'pieces';
                   display = `${rawValue} ${unitLabel}`;
                 } else {
-                  // If DB stores kilograms (measurement name contains 'kg'), convert to grams for the formatter
                   let valueToFormat = Number(rawValue);
                   if (measurementName.includes('kg') || measurementName.includes('kilogram')) {
-                    valueToFormat = Number(rawValue) * 1000; // kg -> g
+                    valueToFormat = Number(rawValue) * 1000;
                   }
                   display = unitConverter.formatMeasurement(valueToFormat, type, unitSystem === 'imperial' ? UnitSystem.IMPERIAL : UnitSystem.METRIC, { preferredUnit });
                 }

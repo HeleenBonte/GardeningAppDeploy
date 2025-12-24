@@ -1,4 +1,3 @@
-// Simple Crop model helpers and Month enum for frontend usage
 export const Month = Object.freeze({
   JANUARY: 'January',
   FEBRUARY: 'February',

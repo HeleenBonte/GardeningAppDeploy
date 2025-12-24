@@ -15,7 +15,6 @@ export default function useUnitPreference() {
         if (!mounted) return;
         if (stored) setUnitSystemState(stored);
       } catch (e) {
-        // ignore
       } finally {
         if (mounted) setLoading(false);
       }
@@ -28,7 +27,6 @@ export default function useUnitPreference() {
       setUnitSystemState(val);
       await persistUnitSystem(val);
     } catch (e) {
-      // ignore
     }
   }, []);
 

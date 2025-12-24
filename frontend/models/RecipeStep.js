@@ -1,4 +1,3 @@
-// Frontend RecipeStep model
 export function createRecipeStep(overrides = {}) {
   return {
     id: overrides.id ?? Date.now().toString(),
