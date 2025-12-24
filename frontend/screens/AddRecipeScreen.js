@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ScrollView, View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, findNodeHandle, UIManager } from 'react-native';
 import { useTheme } from '../themes/ThemeContext';
+import { CommonActions } from '@react-navigation/native';
 import AppHeader from '../components/AppHeader';
 import { getItem } from '../auth/storage';
 import { createRecipe, getMeasurements, getCourses, getCategories, getIngredients } from '../config/api';
@@ -251,22 +252,15 @@ export default function AddRecipeScreen({ navigation }) {
   React.useEffect(() => {
     const unsub = navigation.addListener('blur', () => {
       try {
+        if (typeof navigation.replace === 'function') {
+          navigation.replace('RecipesList');
+          return;
+        }
+      } catch (_) {}
+
+      try {
         if (navigation?.canGoBack && navigation.canGoBack()) {
           navigation.goBack();
-          return;
-        }
-      } catch (_) {}
-
-      try {
-        if (typeof navigation.pop === 'function') {
-          navigation.pop();
-          return;
-        }
-      } catch (_) {}
-
-      try {
-        if (typeof navigation.dismiss === 'function') {
-          navigation.dismiss();
           return;
         }
       } catch (_) {}

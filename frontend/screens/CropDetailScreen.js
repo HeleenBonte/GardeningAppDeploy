@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Alert } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, CommonActions } from '@react-navigation/native';
 import { useTheme } from '../themes/ThemeContext';
 import AppHeader from '../components/AppHeader';
 import useCropDetail from '../hooks/useCropDetail';
@@ -37,22 +37,15 @@ export default function CropDetailScreen() {
   React.useEffect(() => {
     const unsub = navigation.addListener('blur', () => {
       try {
+        if (typeof navigation.replace === 'function') {
+          navigation.replace('CropsList');
+          return;
+        }
+      } catch (_) {}
+
+      try {
         if (navigation?.canGoBack && navigation.canGoBack()) {
           navigation.goBack();
-          return;
-        }
-      } catch (_) {}
-
-      try {
-        if (typeof navigation.pop === 'function') {
-          navigation.pop();
-          return;
-        }
-      } catch (_) {}
-
-      try {
-        if (typeof navigation.dismiss === 'function') {
-          navigation.dismiss();
           return;
         }
       } catch (_) {}
