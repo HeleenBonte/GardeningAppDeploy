@@ -6,6 +6,10 @@ import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.servers.Server;
+import io.swagger.v3.oas.models.OpenAPI;
+import org.springframework.context.annotation.Bean;
+import org.springframework.beans.factory.annotation.Value;
+import java.util.List;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
@@ -24,10 +28,7 @@ import org.springframework.context.annotation.Configuration;
                         - **ADMIN role**: Can manage crops an recipes (create, update, delete)
                         """
         ),
-        servers = {
-                @Server(url = "http://localhost:8080", description = "Local Development"),
-                @Server(url = "https://api.gardeningapp.example.com", description = "Production")
-        },
+        // servers configured programmatically so UI points to the correct host in different environments
         security = @SecurityRequirement(name = "bearerAuth")
 )
 @SecurityScheme(
@@ -38,4 +39,12 @@ import org.springframework.context.annotation.Configuration;
         description = "JWT authentication token. Obtain a token by registering or logging in via /api/auth/register or /api/auth/login"
 )
 public class OpenApiConfig {
+
+        @Bean
+        public OpenAPI customOpenAPI(@Value("${SWAGGER_SERVER_URL:http://136.112.95.185:8080}") String swaggerUrl) {
+                io.swagger.v3.oas.models.servers.Server server = new io.swagger.v3.oas.models.servers.Server();
+                server.setUrl(swaggerUrl);
+                server.setDescription("Backend");
+                return new OpenAPI().servers(List.of(server));
+        }
 }
