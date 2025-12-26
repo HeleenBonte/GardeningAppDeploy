@@ -89,7 +89,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("*")); // or restrict to your frontend origin(s)
+        // Allow all origins via patterns so browsers accept wildcard with credentials in development
+        configuration.setAllowedOriginPatterns(Arrays.asList("*")); // or restrict to your frontend origin(s)
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
