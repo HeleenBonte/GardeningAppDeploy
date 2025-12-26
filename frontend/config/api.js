@@ -1,22 +1,22 @@
 import Constants from 'expo-constants';
 import { getJwtToken, logout } from '../auth/storage';
 
-const PROD_URL = 'https://api.yourdomain.com';
+const PROD_URL = 'http://136.112.95.185:8080';
 
-let API_BASE_URL = 'http://35.192.27.1:8080';
+let API_BASE_URL = 'http://136.112.95.185:8080';
 //let API_BASE_URL = 'http://192.168.129.44:8080';
-if (__DEV__) {
-    const debuggerHost = Constants.manifest?.debuggerHost
-        || Constants.manifest?.hostUri
-        || Constants.expoConfig?.hostUri
-        || Constants.expoGo?.hostUri;
-    const host = debuggerHost ? String(debuggerHost).split(':')[0] : null;
-    if (host && host !== 'localhost') {
-        API_BASE_URL = `http://${host}:8080`;
-    }
-} else {
-    API_BASE_URL = PROD_URL;
-}
+// if (__DEV__) {
+//     const debuggerHost = Constants.manifest?.debuggerHost
+//         || Constants.manifest?.hostUri
+//         || Constants.expoConfig?.hostUri
+//         || Constants.expoGo?.hostUri;
+//     const host = debuggerHost ? String(debuggerHost).split(':')[0] : null;
+//     if (host && host !== 'localhost') {
+//         API_BASE_URL = `http://${host}:8080`;
+//     }
+// } else {
+//     API_BASE_URL = PROD_URL;
+// }
 
 console.log('[api] API_BASE_URL =', API_BASE_URL, ' (derived from expo Constants)');
 
